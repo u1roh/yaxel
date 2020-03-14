@@ -21,6 +21,9 @@ module Functions =
     let hoge (x: Input) =
         x.A + 10
 
+    let piyo (x: Material) =
+        "buzz"
+
 [<EntryPoint>]
 let main args =
     let basePath = IO.Path.Combine(IO.Directory.GetCurrentDirectory(), "../yaxel-client/build")
@@ -43,25 +46,17 @@ let main args =
         if pathes.Length > 0 && pathes.[0] = "function" then
             use writer = new StreamWriter (out)
             if pathes.Length = 1 then
-                let methods =
-                    funcModule.GetMethods()
-                    |> Array.filter (fun m -> m.IsStatic)
-                writer.WriteLine "<html><body><ul>"
-                methods |> Seq.iter (fun method ->
-                    sprintf "<li><a href='%s'>%A</a></li>" method.Name method
-                    |> writer.WriteLine)
-                writer.WriteLine "</ul></body></html>"
+                funcModule.GetMethods()
+                |> Array.filter (fun m -> m.IsStatic)
+                |> Array.map (fun m -> sprintf "\"%s\"" m.Name)
+                |> String.concat ","
+                |> sprintf "[%s]"
+                |> writer.Write
             else
-                let method = funcModule.GetMethod pathes.[1]
-                sprintf "method: %A" method |> writer.WriteLine
-                method.ReturnType |> Meta.ofSystemType |> Meta.toJsonValue |> sprintf "return type = %O" |> writer.WriteLine
-                method.GetParameters() |> Seq.iteri (fun i param ->
-                    param.ParameterType
-                    |> Meta.ofSystemType
-                    |> Meta.toJsonValue
-                    |> sprintf "parameter type [%d] = %O" i
-                    |> writer.WriteLine
-                )
+                funcModule.GetMethod pathes.[1]
+                |> Meta.ofMethod
+                |> Meta.toJsonValue
+                |> writer.Write
         else
             let path =
                 if path = "" then "index.html" else path

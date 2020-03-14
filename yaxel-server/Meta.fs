@@ -1,5 +1,6 @@
 module Meta
 
+open System.Reflection
 open Microsoft.FSharp.Reflection
 
 type Type =
@@ -11,6 +12,7 @@ type Type =
     | List of Type
     | Record of RecordType
     | Union of UnionType
+    | Fun of FunType
     | Unknown of System.Type
 
 and RecordType =
@@ -29,6 +31,14 @@ and UnionCase =
     { CaseName: string
       CaseType: Type }
 
+and FunType =
+    { FunName: string
+      FunParams: FunParam list
+      FunReturnType: Type }
+
+and FunParam =
+    { FunParamName: string
+      FunParamType: Type }
 
 let private primitiveTypes =
     [ typeof<int>, Int
@@ -62,6 +72,17 @@ let rec ofSystemType (t: System.Type) =
         |> Union
     else
         Unknown t
+
+and ofMethod (m: MethodInfo) =
+    { FunName = m.Name
+      FunReturnType = ofSystemType m.ReturnType
+      FunParams =
+          m.GetParameters()
+          |> Array.map (fun p ->
+              { FunParamName = p.Name
+                FunParamType = ofSystemType p.ParameterType })
+          |> Array.toList }
+    |> Fun
 
 type JsonValue =
     | JsonNull
@@ -118,6 +139,17 @@ let rec toJsonValue (t: Type) =
         [ "union",
           u.UnionCases
           |> List.map (fun case -> case.CaseName, toJsonValue case.CaseType)
+          |> Map.ofList
+          |> JsonObject ]
+        |> Map.ofList
+        |> JsonObject
+    | Fun f ->
+        [ "type", JsonString "fun"
+          "name", JsonString f.FunName
+          "return", toJsonValue f.FunReturnType
+          "params",
+          f.FunParams
+          |> List.map (fun p -> p.FunParamName, toJsonValue p.FunParamType)
           |> Map.ofList
           |> JsonObject ]
         |> Map.ofList

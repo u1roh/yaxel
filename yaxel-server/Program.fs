@@ -5,14 +5,20 @@ open System.Linq
 open System.Threading.Tasks
 open Microsoft.FSharp.Reflection
 
-let f (t: Type) =
-    let fields = Microsoft.FSharp.Reflection.FSharpType.GetRecordFields t
-    Meta.Type.Int
-
 module Functions =
 
-    let hoge (x: int) =
-        x + 10
+    type Material =
+        | SUS304
+        | SPCC
+
+    type Input = {
+        A: int
+        B: double
+        C: Material
+    }
+
+    let hoge (x: Input) =
+        x.A + 10
 
 [<EntryPoint>]
 let main args =
@@ -45,9 +51,13 @@ let main args =
                     |> writer.WriteLine)
                 writer.WriteLine "</ul></body></html>"
             else
-                printfn "pathes = %A" pathes
-                let funcname = pathes.[1]
-                funcModule.GetMethod funcname |> sprintf "%A" |> writer.WriteLine
+                let method = funcModule.GetMethod pathes.[1]
+                sprintf "method: %A" method |> writer.WriteLine
+                method.ReturnType |> Meta.toMetaType |> sprintf "return type = %A" |> writer.WriteLine
+                method.GetParameters() |> Seq.iteri (fun i param ->
+                    sprintf "parameter type [%d] = %A" i (Meta.toMetaType param.ParameterType)
+                    |> writer.WriteLine
+                )
         else
             let path =
                 if path = "" then "index.html" else path

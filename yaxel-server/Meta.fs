@@ -7,7 +7,7 @@ type Type =
     | Float
     | Bool
     | String
-    | Option of Type
+    | Tuple of Type list // unit if list is empty
     | List of Type
     | Record of RecordType
     | Union of UnionType
@@ -27,14 +27,15 @@ and UnionType =
 
 and UnionCase =
     { CaseName: string
-      CaseType: Type option }
+      CaseType: Type }
 
 
 let private primitiveTypes =
-    [ typeof<int>, Type.Int
-      typeof<float>, Type.Float
-      typeof<bool>, Type.Bool
-      typeof<string>, Type.String ]
+    [ typeof<int>, Int
+      typeof<float>, Float
+      typeof<bool>, Bool
+      typeof<string>, String
+      typeof<unit>, Tuple [] ]
     |> readOnlyDict
 
 let rec ofSystemType (t: System.Type) =
@@ -56,7 +57,7 @@ let rec ofSystemType (t: System.Type) =
               FSharpType.GetUnionCases t
               |> Array.map (fun case ->
                   { CaseName = case.Name
-                    CaseType = None })
+                    CaseType = Tuple [] }) // not implemented
               |> Array.toList }
         |> Union
     else
@@ -92,14 +93,15 @@ let rec toJsonValue (t: Type) =
     | Float -> JsonString "float"
     | Bool -> JsonString "bool"
     | String -> JsonString "string"
-    | Option t ->
-        [ "union",
-          [ "Some", toJsonValue t
-            "None", JsonNull ]
-          |> Map.ofList
-          |> JsonObject ]
-        |> Map.ofList
-        |> JsonObject
+    | Tuple x ->
+        match x with
+        | [] -> JsonNull
+        | [ t ] -> toJsonValue t
+        | _ ->
+            x
+            |> List.map toJsonValue
+            |> List.toArray
+            |> JsonArray
     | List t ->
         [ "list", toJsonValue t ]
         |> Map.ofList
@@ -115,7 +117,7 @@ let rec toJsonValue (t: Type) =
     | Union u ->
         [ "union",
           u.UnionCases
-          |> List.map (fun case -> case.CaseName, JsonNull)
+          |> List.map (fun case -> case.CaseName, toJsonValue case.CaseType)
           |> Map.ofList
           |> JsonObject ]
         |> Map.ofList

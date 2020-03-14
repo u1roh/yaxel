@@ -15,6 +15,7 @@ module Functions =
         A: int
         B: double
         C: Material
+        D: string option
     }
 
     let hoge (x: Input) =
@@ -53,9 +54,12 @@ let main args =
             else
                 let method = funcModule.GetMethod pathes.[1]
                 sprintf "method: %A" method |> writer.WriteLine
-                method.ReturnType |> Meta.toMetaType |> sprintf "return type = %A" |> writer.WriteLine
+                method.ReturnType |> Meta.ofSystemType |> Meta.toJsonValue |> sprintf "return type = %O" |> writer.WriteLine
                 method.GetParameters() |> Seq.iteri (fun i param ->
-                    sprintf "parameter type [%d] = %A" i (Meta.toMetaType param.ParameterType)
+                    param.ParameterType
+                    |> Meta.ofSystemType
+                    |> Meta.toJsonValue
+                    |> sprintf "parameter type [%d] = %O" i
                     |> writer.WriteLine
                 )
         else

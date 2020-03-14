@@ -37,7 +37,7 @@ let private primitiveTypes =
       typeof<string>, Type.String ]
     |> readOnlyDict
 
-let rec toMetaType (t: System.Type) =
+let rec ofSystemType (t: System.Type) =
     let contains, found = primitiveTypes.TryGetValue t
     if contains then
         found
@@ -47,7 +47,7 @@ let rec toMetaType (t: System.Type) =
               FSharpType.GetRecordFields t
               |> Array.map (fun prop ->
                   { FieldName = prop.Name
-                    FieldType = toMetaType prop.PropertyType })
+                    FieldType = ofSystemType prop.PropertyType })
               |> Array.toList }
         |> Record
     elif FSharpType.IsUnion t then
@@ -83,6 +83,41 @@ type JsonValue =
             |> Map.toSeq
             |> Seq.map (fun (key, value) -> sprintf "\"%s\":%O" key value)
             |> String.concat ","
+            |> sprintf "{%s}"
 
 
-let toJsonValue (t: Type) = JsonNull
+let rec toJsonValue (t: Type) =
+    match t with
+    | Int -> JsonString "int"
+    | Float -> JsonString "float"
+    | Bool -> JsonString "bool"
+    | String -> JsonString "string"
+    | Option t ->
+        [ "union",
+          [ "Some", toJsonValue t
+            "None", JsonNull ]
+          |> Map.ofList
+          |> JsonObject ]
+        |> Map.ofList
+        |> JsonObject
+    | List t ->
+        [ "list", toJsonValue t ]
+        |> Map.ofList
+        |> JsonObject
+    | Record r ->
+        [ "record",
+          r.RecordFields
+          |> List.map (fun field -> field.FieldName, toJsonValue field.FieldType)
+          |> Map.ofList
+          |> JsonObject ]
+        |> Map.ofList
+        |> JsonObject
+    | Union u ->
+        [ "union",
+          u.UnionCases
+          |> List.map (fun case -> case.CaseName, JsonNull)
+          |> Map.ofList
+          |> JsonObject ]
+        |> Map.ofList
+        |> JsonObject
+    | Unknown t -> t.FullName |> JsonString

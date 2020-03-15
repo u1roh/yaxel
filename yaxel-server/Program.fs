@@ -24,6 +24,9 @@ module Functions =
     let piyo (x: Material) =
         "buzz"
 
+    let simple (x: int) =
+        x * 2
+
 [<EntryPoint>]
 let main args =
     let basePath = IO.Path.Combine(IO.Directory.GetCurrentDirectory(), "../yaxel-client/build")
@@ -55,7 +58,7 @@ let main args =
             else
                 funcModule.GetMethod pathes.[1]
                 |> Meta.ofMethod
-                |> Meta.toJsonValue
+                |> Meta.funToJsonValue
                 |> writer.Write
         else
             let path =

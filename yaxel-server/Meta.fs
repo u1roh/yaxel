@@ -10,9 +10,9 @@ type Type =
     | String
     | Tuple of Type list // unit if list is empty
     | List of Type
+    | Fun of Type * Type
     | Record of RecordType
     | Union of UnionType
-    | Fun of FunType
     | Unknown of System.Type
 
 and TypedItem =
@@ -26,11 +26,6 @@ and RecordType =
 and UnionType =
     { UnionName: string
       UnionCases: TypedItem list }
-
-and FunType =
-    { FunName: string
-      FunParams: TypedItem list
-      FunReturnType: Type }
 
 let private primitiveTypes =
     [ typeof<int>, Int
@@ -64,17 +59,6 @@ let rec ofSystemType (t: System.Type) =
         |> Union
     else
         Unknown t
-
-and ofMethod (m: MethodInfo) =
-    { FunName = m.Name
-      FunReturnType = ofSystemType m.ReturnType
-      FunParams =
-          m.GetParameters()
-          |> Array.map (fun p ->
-              { Name = p.Name
-                Type = ofSystemType p.ParameterType })
-          |> Array.toList }
-    |> Fun
 
 type JsonValue =
     | JsonNull
@@ -119,6 +103,13 @@ let rec toJsonValue (t: Type) =
         [ "list", toJsonValue t ]
         |> Map.ofList
         |> JsonObject
+    | Fun(paramType, returnType) ->
+        [ "fun",
+          [| paramType; returnType |]
+          |> Array.map toJsonValue
+          |> JsonArray ]
+        |> Map.ofList
+        |> JsonObject
     | Record r ->
         [ "name", JsonString r.RecordName
           "record",
@@ -137,14 +128,34 @@ let rec toJsonValue (t: Type) =
           |> JsonObject ]
         |> Map.ofList
         |> JsonObject
-    | Fun f ->
-        [ "name", JsonString f.FunName
-          "return", toJsonValue f.FunReturnType
-          "params",
-          f.FunParams
-          |> List.map (fun p -> p.Name, toJsonValue p.Type)
-          |> Map.ofList
-          |> JsonObject ]
-        |> Map.ofList
-        |> JsonObject
     | Unknown t -> t.FullName |> JsonString
+
+type Function =
+    { FunName: string
+      FunParams: TypedItem list
+      FunReturnType: Type }
+
+let ofMethod (m: MethodInfo) =
+    { FunName = m.Name
+      FunReturnType = ofSystemType m.ReturnType
+      FunParams =
+          m.GetParameters()
+          |> Array.map (fun p ->
+              { Name = p.Name
+                Type = ofSystemType p.ParameterType })
+          |> Array.toList }
+
+let funToJsonValue f =
+    [ "name", JsonString f.FunName
+      "return", toJsonValue f.FunReturnType
+      "params",
+      f.FunParams
+      |> List.map (fun p ->
+          [ "name", JsonString p.Name
+            "type", toJsonValue p.Type ]
+          |> Map.ofList
+          |> JsonObject)
+      |> List.toArray
+      |> JsonArray ]
+    |> Map.ofList
+    |> JsonObject

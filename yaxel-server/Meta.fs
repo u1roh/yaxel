@@ -15,30 +15,22 @@ type Type =
     | Fun of FunType
     | Unknown of System.Type
 
+and TypedItem =
+    { Name: string
+      Type: Type }
+
 and RecordType =
     { RecordName: string
-      RecordFields: RecordField list }
-
-and RecordField =
-    { FieldName: string
-      FieldType: Type }
+      RecordFields: TypedItem list }
 
 and UnionType =
     { UnionName: string
-      UnionCases: UnionCase list }
-
-and UnionCase =
-    { CaseName: string
-      CaseType: Type }
+      UnionCases: TypedItem list }
 
 and FunType =
     { FunName: string
-      FunParams: FunParam list
+      FunParams: TypedItem list
       FunReturnType: Type }
-
-and FunParam =
-    { FunParamName: string
-      FunParamType: Type }
 
 let private primitiveTypes =
     [ typeof<int>, Int
@@ -57,8 +49,8 @@ let rec ofSystemType (t: System.Type) =
           RecordFields =
               FSharpType.GetRecordFields t
               |> Array.map (fun prop ->
-                  { FieldName = prop.Name
-                    FieldType = ofSystemType prop.PropertyType })
+                  { Name = prop.Name
+                    Type = ofSystemType prop.PropertyType })
               |> Array.toList }
         |> Record
     elif FSharpType.IsUnion t then
@@ -66,8 +58,8 @@ let rec ofSystemType (t: System.Type) =
           UnionCases =
               FSharpType.GetUnionCases t
               |> Array.map (fun case ->
-                  { CaseName = case.Name
-                    CaseType = Tuple [] }) // not implemented
+                  { Name = case.Name
+                    Type = Tuple [] }) // not implemented
               |> Array.toList }
         |> Union
     else
@@ -79,8 +71,8 @@ and ofMethod (m: MethodInfo) =
       FunParams =
           m.GetParameters()
           |> Array.map (fun p ->
-              { FunParamName = p.Name
-                FunParamType = ofSystemType p.ParameterType })
+              { Name = p.Name
+                Type = ofSystemType p.ParameterType })
           |> Array.toList }
     |> Fun
 
@@ -128,28 +120,29 @@ let rec toJsonValue (t: Type) =
         |> Map.ofList
         |> JsonObject
     | Record r ->
-        [ "record",
+        [ "name", JsonString r.RecordName
+          "record",
           r.RecordFields
-          |> List.map (fun field -> field.FieldName, toJsonValue field.FieldType)
+          |> List.map (fun field -> field.Name, toJsonValue field.Type)
           |> Map.ofList
           |> JsonObject ]
         |> Map.ofList
         |> JsonObject
     | Union u ->
-        [ "union",
+        [ "name", JsonString u.UnionName
+          "union",
           u.UnionCases
-          |> List.map (fun case -> case.CaseName, toJsonValue case.CaseType)
+          |> List.map (fun case -> case.Name, toJsonValue case.Type)
           |> Map.ofList
           |> JsonObject ]
         |> Map.ofList
         |> JsonObject
     | Fun f ->
-        [ "type", JsonString "fun"
-          "name", JsonString f.FunName
+        [ "name", JsonString f.FunName
           "return", toJsonValue f.FunReturnType
           "params",
           f.FunParams
-          |> List.map (fun p -> p.FunParamName, toJsonValue p.FunParamType)
+          |> List.map (fun p -> p.Name, toJsonValue p.Type)
           |> Map.ofList
           |> JsonObject ]
         |> Map.ofList

@@ -16,6 +16,7 @@ class FuncList extends React.Component<{}, State> {
     fetch('function')
       .then(res => res?.text())
       .then(body => {
+        console.log(body);
         this.setState({ functions: JSON.parse(body) })
       });
   }
@@ -29,10 +30,11 @@ class FuncList extends React.Component<{}, State> {
 }
 
 function App() {
+  // <Function name="hoge" />
   return (
     <div className="App">
       <FuncList />
-      <Function name="hoge" />
+      <Function name="simple" />
     </div>
   );
 }

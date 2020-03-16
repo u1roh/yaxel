@@ -48,6 +48,7 @@ interface Fun {
     params: TypedItem[]
 }
 
+/*
 function jsonToFun(json: any): Fun | null {
     if (json.name === undefined) return null;
     if (json.ret === undefined) return null;
@@ -60,6 +61,7 @@ function jsonToFun(json: any): Fun | null {
         ret: ret, params: new Array<TypedItem>()
     };
 }
+*/
 
 
 interface Props {
@@ -68,7 +70,7 @@ interface Props {
 
 interface State {
     text: string
-    func: Function | null
+    func: Fun | null
 }
 
 class Function extends React.Component<Props, State> {
@@ -82,15 +84,21 @@ class Function extends React.Component<Props, State> {
             .then(t => {
                 let json = JSON.parse(t);
                 console.log(json);
-                this.setState({ text: t, func: null });
+                /*
+                let fun = jsonToFun(json);
+                console.log(fun);
+                this.setState({ text: t, func: fun });
+                */
+                this.setState({ text: t, func: json });
             });
     }
     render() {
+        //<p>{this.state.func}</p>
         return (
             <div className="Function">
                 <div className="Function-name">{this.props.name}</div>
                 <p>{this.state.text}</p>
-                <p>{this.state.func}</p>
+                <p>{this.state.func?.name}</p>
             </div>
         );
     }

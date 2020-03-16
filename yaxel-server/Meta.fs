@@ -147,7 +147,7 @@ let ofMethod (m: MethodInfo) =
 
 let funToJsonValue f =
     [ "name", JsonString f.FunName
-      "return", toJsonValue f.FunReturnType
+      "ret", toJsonValue f.FunReturnType
       "params",
       f.FunParams
       |> List.map (fun p ->

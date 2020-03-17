@@ -54,7 +54,14 @@ let rec ofSystemType (t: System.Type) =
               FSharpType.GetUnionCases t
               |> Array.map (fun case ->
                   { Name = case.Name
-                    Type = Tuple [] }) // not implemented
+                    Type =
+                        case.GetFields()
+                        |> Array.map (fun x ->
+                            printfn "case field: %A" x
+                            x)
+                        |> Array.map (fun prop -> ofSystemType prop.PropertyType)
+                        |> Array.toList
+                        |> Tuple })
               |> Array.toList }
         |> Union
     else
@@ -91,6 +98,7 @@ let rec toJsonValue (t: Type) =
     | Bool -> JsonString "bool"
     | String -> JsonString "string"
     | Tuple x ->
+        printfn "toJsonValue: Tuple %A" x
         match x with
         | [] -> JsonNull
         | [ t ] -> toJsonValue t

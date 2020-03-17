@@ -5,41 +5,31 @@ type Type =
     | "float"
     | "bool"
     | "string"
-    | TupleType
+    | Type[]    // tuple, or unit when the array is empty
     | ListType
     | RecordType
     | UnionType
 
-interface TupleType {
-    types: Type[]
-}
-
 interface ListType {
-    type: Type
-}
-
-interface TypedItem {
-    name: string
+    tag: 'list'
     type: Type
 }
 
 interface RecordType {
+    tag: 'record'
     name: string
     fields: TypedItem[]
 }
 
 interface UnionType {
+    tag: 'union'
     name: string
     cases: TypedItem[]
 }
 
-function jsonToType(json: any): Type | null {
-    switch (json) {
-        case "int":
-            return "int";
-        default:
-            return null;
-    }
+interface TypedItem {
+    name: string
+    type: Type
 }
 
 interface Fun {
@@ -48,20 +38,6 @@ interface Fun {
     params: TypedItem[]
 }
 
-/*
-function jsonToFun(json: any): Fun | null {
-    if (json.name === undefined) return null;
-    if (json.ret === undefined) return null;
-    if (json.params === undefined) return null;
-    if (!Array.isArray(json.params)) return null;
-    const ret = jsonToType(json.ret);
-    if (ret == null) return null;
-    return {
-        name: json.name,
-        ret: ret, params: new Array<TypedItem>()
-    };
-}
-*/
 
 
 interface TypedInputState { }
@@ -72,12 +48,36 @@ class TypedInput extends React.Component<TypedItem, TypedInputState> {
         this.state = {};
     }
     render() {
-        return (<div className="TypedInput">
-            <span>{this.props.name} : </span>
-            {
-                (this.props.type == "int") ? <input></input> : <p>{JSON.stringify(this.props.type)}</p>
-            }
-        </div>);
+        switch (this.props.type) {
+            case "int":
+            case "float":
+            case "bool":
+            case "string":
+                return <span>{this.props.name} : <input></input></span>;
+            default:
+                if (Array.isArray(this.props.type)) {
+                    return JSON.stringify(this.props.type);
+                }
+                switch (this.props.type.tag) {
+                    case 'record':
+                        return (<div>
+                            <div>{this.props.name} : {this.props.type.name}</div>
+                            {this.props.type.fields.map(item =>
+                                <div><TypedInput name={item.name} type={item.type} /></div>
+                            )}
+                        </div>);
+                    case 'union':
+                        return (<div>
+                            {this.props.name} :
+                            <select>
+                                {this.props.type.cases.map(item =>
+                                    <option value={item.name}>{item.name}</option>)}
+                            </select>
+                        </div>);
+                    default:
+                        return JSON.stringify(this.props.type);
+                }
+        }
     }
 }
 

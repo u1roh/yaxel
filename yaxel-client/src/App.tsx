@@ -23,6 +23,7 @@ class FuncList extends React.Component<{}, State> {
   render() {
     return (
       <div className="FuncList">
+        <h1>Functions</h1>
         <ul>{this.state.functions.map(item => <li>{item}</li>)}</ul>
       </div>
     );
@@ -35,6 +36,7 @@ function App() {
     <div className="App">
       <FuncList />
       <Function name="simple" />
+      <Function name="piyo" />
     </div>
   );
 }

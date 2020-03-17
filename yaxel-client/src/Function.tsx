@@ -69,14 +69,13 @@ interface Props {
 }
 
 interface State {
-    text: string
     func: Fun | null
 }
 
 class Function extends React.Component<Props, State> {
     constructor(props: Props) {
         super(props);
-        this.state = { text: "hoge", func: null };
+        this.state = { func: null };
     }
     componentDidMount() {
         fetch('function/' + this.props.name)
@@ -87,18 +86,22 @@ class Function extends React.Component<Props, State> {
                 /*
                 let fun = jsonToFun(json);
                 console.log(fun);
-                this.setState({ text: t, func: fun });
+                this.setState({ func: fun });
                 */
-                this.setState({ text: t, func: json });
+                this.setState({ func: json });
             });
     }
     render() {
         //<p>{this.state.func}</p>
         return (
             <div className="Function">
-                <div className="Function-name">{this.props.name}</div>
-                <p>{this.state.text}</p>
-                <p>{this.state.func?.name}</p>
+                <h1>'<span className="Function-name">{this.state.func?.name}</span>' function</h1>
+                <h2>return</h2>
+                <p>{JSON.stringify(this.state.func?.ret)}</p>
+                <h2>params</h2>
+                <ul>
+                    {this.state.func?.params.map(p => <li>{p.name}</li>)}
+                </ul>
             </div>
         );
     }

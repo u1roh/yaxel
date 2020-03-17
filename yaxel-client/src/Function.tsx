@@ -64,16 +64,34 @@ function jsonToFun(json: any): Fun | null {
 */
 
 
-interface Props {
+interface TypedInputState { }
+
+class TypedInput extends React.Component<TypedItem, TypedInputState> {
+    constructor(props: TypedItem) {
+        super(props);
+        this.state = {};
+    }
+    render() {
+        return (<div className="TypedInput">
+            <span>{this.props.name} : </span>
+            {
+                (this.props.type == "int") ? <input></input> : <p>{JSON.stringify(this.props.type)}</p>
+            }
+        </div>);
+    }
+}
+
+
+interface FunctionProps {
     name: string
 }
 
-interface State {
+interface FunctionState {
     func: Fun | null
 }
 
-class Function extends React.Component<Props, State> {
-    constructor(props: Props) {
+class Function extends React.Component<FunctionProps, FunctionState> {
+    constructor(props: FunctionProps) {
         super(props);
         this.state = { func: null };
     }
@@ -95,13 +113,14 @@ class Function extends React.Component<Props, State> {
         //<p>{this.state.func}</p>
         return (
             <div className="Function">
-                <h1>'<span className="Function-name">{this.state.func?.name}</span>' function</h1>
-                <h2>return</h2>
+                <h2>'<span className="Function-name">{this.state.func?.name}</span>' function</h2>
+                <h3>return</h3>
                 <p>{JSON.stringify(this.state.func?.ret)}</p>
-                <h2>params</h2>
-                <ul>
-                    {this.state.func?.params.map(p => <li>{p.name}</li>)}
-                </ul>
+                <h3>params</h3>
+                {this.state.func?.params.map(p =>
+                    <div>
+                        <TypedInput name={p.name} type={p.type} />
+                    </div>)}
             </div>
         );
     }

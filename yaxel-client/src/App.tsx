@@ -37,6 +37,7 @@ function App() {
       <FuncList />
       <Function name="simple" />
       <Function name="piyo" />
+      <Function name="hoge" />
     </div>
   );
 }

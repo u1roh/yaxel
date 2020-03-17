@@ -15,29 +15,22 @@ class FuncList extends React.Component<{}, State> {
   componentDidMount() {
     fetch('function')
       .then(res => res?.text())
-      .then(body => {
-        console.log(body);
-        this.setState({ functions: JSON.parse(body) })
-      });
+      .then(body => this.setState({ functions: JSON.parse(body) }));
   }
   render() {
     return (
       <div className="FuncList">
         <h1>Functions</h1>
-        <ul>{this.state.functions.map(item => <li>{item}</li>)}</ul>
+        {this.state.functions.map(item => <Function name={item}></Function>)}
       </div>
     );
   }
 }
 
 function App() {
-  // <Function name="hoge" />
   return (
     <div className="App">
       <FuncList />
-      <Function name="simple" />
-      <Function name="piyo" />
-      <Function name="hoge" />
     </div>
   );
 }

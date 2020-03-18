@@ -44,14 +44,14 @@ class TypedInput extends React.Component<yaxel.TypedItem, State> {
         this.state = { value: null };
     }
     private caption() {
-        return this.props.name == "" ? "" : this.props.name + " = ";
+        return this.props.name.length === 0 ? "" : this.props.name + " = ";
     }
     private renderInternal() {
         switch (this.props.type) {
             case "int":
             case "float":
             case "string":
-                return <span>{this.props.name} = <input></input></span>;
+                return <span>{this.caption()}<input></input></span>;
             case "bool":
                 return <span><input type='checkbox'></input><label>{this.props.name}</label></span>;
             default:

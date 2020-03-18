@@ -50,9 +50,10 @@ class TypedInput extends React.Component<yaxel.TypedItem, State> {
         switch (this.props.type) {
             case "int":
             case "float":
-            case "bool":
             case "string":
                 return <span>{this.props.name} = <input></input></span>;
+            case "bool":
+                return <span><input type='checkbox'></input><label>{this.props.name}</label></span>;
             default:
                 if (Array.isArray(this.props.type)) {
                     return JSON.stringify(this.props.type);

@@ -34,22 +34,28 @@ class UnionInput extends React.Component<{ union: yaxel.UnionType }, UnionInputS
     }
 }
 
+interface BoolInputProps {
+    onChange: (value: boolean) => void;
+}
 
-class BoolInput extends React.Component<{}, boolean> {
-    constructor(props: {}) {
+class BoolInput extends React.Component<BoolInputProps, { value: boolean }> {
+    constructor(props: BoolInputProps) {
         super(props);
-        this.state = false;
+        this.state = { value: false };
+    }
+    private onChange(checked: boolean) {
+        console.log("BoolInput#onChange: " + checked);
+        this.setState({ value: checked });
+        console.log("BoolInput#onChange: 1");
+        this.props.onChange(checked);
+        console.log("BoolInput#onChange: 2");
     }
     render() {
-        return <input type='checkbox' checked={this.state} onChange={(e) => this.setState(e.target.checked)}></input>
+        return <input type='checkbox' checked={this.state.value} onChange={(e) => this.onChange(e.target.checked)}></input>
     }
 }
 
-interface State {
-    value: any
-}
-
-class TypedInput extends React.Component<yaxel.TypedItem, State> {
+class TypedInput extends React.Component<yaxel.TypedItem, { value: any }> {
     constructor(props: yaxel.TypedItem) {
         super(props);
         this.state = { value: null };
@@ -57,14 +63,19 @@ class TypedInput extends React.Component<yaxel.TypedItem, State> {
     private caption() {
         return this.props.name.length === 0 ? "" : this.props.name + " = ";
     }
+    private onChange(x: any) {
+        console.log("TypedInput#onChange: " + x);
+        this.setState({ value: x });
+    }
     private renderInternal() {
         switch (this.props.type) {
             case "int":
             case "float":
             case "string":
-                return <span>{this.caption()}<input></input></span>;
+                return <span>{this.caption()}<input onChange={(e) => this.onChange(e.target.value)}></input></span>;
             case "bool":
-                return <span><input type='checkbox'></input><label>{this.props.name}</label></span>;
+                return <span><input type='checkbox' onChange={(e) => this.onChange(e.target.checked)}></input><label>{this.props.name}</label></span>;
+            //return <span><BoolInput onChange={(x) => this.onChange(x)}></BoolInput><label>{this.props.name}</label></span>;
             default:
                 if (Array.isArray(this.props.type)) {
                     return JSON.stringify(this.props.type);

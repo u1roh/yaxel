@@ -29,7 +29,7 @@ class UnionInput extends React.Component<{ union: yaxel.UnionType }, UnionInputS
             </select>
             {this.state.selectedCaseType == null ?
                 <span></span> :
-                <TypedInput name='' type={this.state.selectedCaseType} />}
+                <TypedInput name='' type={this.state.selectedCaseType} onChange={(x) => { }} />}
         </div>);
     }
 }
@@ -55,8 +55,14 @@ class BoolInput extends React.Component<BoolInputProps, { value: boolean }> {
     }
 }
 
-class TypedInput extends React.Component<yaxel.TypedItem, { value: any }> {
-    constructor(props: yaxel.TypedItem) {
+interface TypedInputProps {
+    name: string;
+    type: yaxel.Type;
+    onChange: (value: any) => void;
+}
+
+class TypedInput extends React.Component<TypedInputProps, { value: any }> {
+    constructor(props: TypedInputProps) {
         super(props);
         this.state = { value: null };
     }
@@ -65,6 +71,7 @@ class TypedInput extends React.Component<yaxel.TypedItem, { value: any }> {
     }
     private onChange(x: any) {
         console.log("TypedInput#onChange: " + x);
+        this.props.onChange(x);
         this.setState({ value: x });
     }
     private renderInternal() {
@@ -82,10 +89,16 @@ class TypedInput extends React.Component<yaxel.TypedItem, { value: any }> {
                 }
                 switch (this.props.type.tag) {
                     case 'record':
+                        const onChange = (name: string, value: any) => {
+                            console.log("record / onChange: name = " + name + ", value = " + JSON.stringify(value));
+                            const record = this.state.value ? this.state.value : {};
+                            record[name] = value;
+                            this.onChange(record);
+                        };
                         return (<div>
                             <div>{this.caption()}{this.props.type.name}</div>
                             {this.props.type.fields.map(item =>
-                                <div><TypedInput name={item.name} type={item.type} /></div>
+                                <div><TypedInput name={item.name} type={item.type} onChange={(x) => onChange(item.name, x)} /></div>
                             )}
                         </div>);
                     case 'union':

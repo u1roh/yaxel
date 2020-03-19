@@ -4,14 +4,25 @@ import * as yaxel from './yaxel'
 
 interface FunArgInputProps {
     params: yaxel.TypedItem[] | undefined;
-    onSubmit: ((value: any) => void);
+    onSubmit: ((args: any[]) => void);
 }
 
-class FunArgsInput extends React.Component<FunArgInputProps> {
+class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
+    constructor(props: FunArgInputProps) {
+        super(props);
+        this.state = { args: new Array<any>(props.params?.length) };
+
+    }
+    private onChange(i: number, x: any) {
+        console.log("FunArgsInput#inChange(" + i + ", " + JSON.stringify(x) + ")");
+        const state = this.state;
+        state.args[i] = x;
+        this.setState(state);
+    }
     render() {
         return (<form>
-            {this.props.params?.map(p => <TypedInput name={p.name} type={p.type} />)}
-            <input type="button" onClick={(e) => this.props.onSubmit(null)} value="Execute"></input>
+            {this.props.params?.map((p, i) => <TypedInput name={p.name} type={p.type} onChange={(x) => this.onChange(i, x)} />)}
+            <input type="button" onClick={(e) => this.props.onSubmit(this.state.args)} value="Execute"></input>
         </form>);
     }
 }

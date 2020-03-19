@@ -2,13 +2,18 @@ import React from 'react';
 import * as yaxel from './yaxel'
 import './TypedInput.css';
 
+interface UnionInputProps {
+    union: yaxel.UnionType;
+    onChange: (value: any) => void;
+}
+
 interface UnionInputState {
     selectedCaseName: string
     selectedCaseType: yaxel.Type | null
 }
 
-class UnionInput extends React.Component<{ union: yaxel.UnionType }, UnionInputState> {
-    constructor(props: { union: yaxel.UnionType }) {
+class UnionInput extends React.Component<UnionInputProps, UnionInputState> {
+    constructor(props: UnionInputProps) {
         super(props);
         this.state = {
             selectedCaseName: props.union.cases[0].name,
@@ -20,6 +25,9 @@ class UnionInput extends React.Component<{ union: yaxel.UnionType }, UnionInputS
             selectedCaseName: this.props.union.cases[i].name,
             selectedCaseType: this.props.union.cases[i].type
         });
+        if (this.props.union.cases[i].type == null) {
+            this.props.onChange(this.props.union.cases[i].name);
+        }
     }
     render() {
         return (<div>
@@ -29,29 +37,13 @@ class UnionInput extends React.Component<{ union: yaxel.UnionType }, UnionInputS
             </select>
             {this.state.selectedCaseType == null ?
                 <span></span> :
-                <TypedInput name='' type={this.state.selectedCaseType} onChange={(x) => { }} />}
+                <TypedInput name='' type={this.state.selectedCaseType}
+                    onChange={x => {
+                        const obj: any = {};
+                        obj[this.state.selectedCaseName] = x;
+                        this.props.onChange(obj);
+                    }} />}
         </div>);
-    }
-}
-
-interface BoolInputProps {
-    onChange: (value: boolean) => void;
-}
-
-class BoolInput extends React.Component<BoolInputProps, { value: boolean }> {
-    constructor(props: BoolInputProps) {
-        super(props);
-        this.state = { value: false };
-    }
-    private onChange(checked: boolean) {
-        console.log("BoolInput#onChange: " + checked);
-        this.setState({ value: checked });
-        console.log("BoolInput#onChange: 1");
-        this.props.onChange(checked);
-        console.log("BoolInput#onChange: 2");
-    }
-    render() {
-        return <input type='checkbox' checked={this.state.value} onChange={(e) => this.onChange(e.target.checked)}></input>
     }
 }
 
@@ -79,10 +71,14 @@ class TypedInput extends React.Component<TypedInputProps, { value: any }> {
             case "int":
             case "float":
             case "string":
-                return <span>{this.caption()}<input onChange={(e) => this.onChange(e.target.value)}></input></span>;
+                return <span>{this.caption()}
+                    <input onChange={(e) => this.onChange(e.target.value)}></input>
+                </span>;
             case "bool":
-                return <span><input type='checkbox' onChange={(e) => this.onChange(e.target.checked)}></input><label>{this.props.name}</label></span>;
-            //return <span><BoolInput onChange={(x) => this.onChange(x)}></BoolInput><label>{this.props.name}</label></span>;
+                return <span>
+                    <input type='checkbox' onChange={(e) => this.onChange(e.target.checked)}></input>
+                    <label>{this.props.name}</label>
+                </span>;
             default:
                 if (Array.isArray(this.props.type)) {
                     return JSON.stringify(this.props.type);
@@ -102,7 +98,7 @@ class TypedInput extends React.Component<TypedInputProps, { value: any }> {
                             )}
                         </div>);
                     case 'union':
-                        return <div>{this.caption()}<UnionInput union={this.props.type} /></div>;
+                        return <div>{this.caption()}<UnionInput union={this.props.type} onChange={x => this.onChange(x)} /></div>;
                     default:
                         return JSON.stringify(this.props.type);
                 }

@@ -2,11 +2,16 @@ import React from 'react';
 import TypedInput from './TypedInput'
 import * as yaxel from './yaxel'
 
-class FunArgsInput extends React.Component<{ params: yaxel.TypedItem[] | undefined }> {
+interface FunArgInputProps {
+    params: yaxel.TypedItem[] | undefined;
+    onSubmit: ((value: any) => void);
+}
+
+class FunArgsInput extends React.Component<FunArgInputProps> {
     render() {
         return (<form>
             {this.props.params?.map(p => <TypedInput name={p.name} type={p.type} />)}
-            <input type="submit"></input>
+            <input type="button" onClick={(e) => this.props.onSubmit(null)} value="Execute"></input>
         </form>);
     }
 }
@@ -24,6 +29,9 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         super(props);
         this.state = { func: null };
     }
+    private invoke(value: any) {
+        console.log("Function#invoke(" + value + ")");
+    }
     componentDidMount() {
         fetch('function/' + this.props.name)
             .then(response => response?.text())
@@ -35,7 +43,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
                 <hr></hr>
                 <h2>'<span className="Function-name">{this.state.func?.name}</span>' function</h2>
                 <h3>params</h3>
-                <FunArgsInput params={this.state.func?.params}></FunArgsInput>
+                <FunArgsInput params={this.state.func?.params} onSubmit={this.invoke}></FunArgsInput>
                 <h3>return</h3>
                 <p>{JSON.stringify(this.state.func?.ret)}</p>
             </div>

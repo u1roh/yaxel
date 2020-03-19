@@ -34,6 +34,17 @@ class UnionInput extends React.Component<{ union: yaxel.UnionType }, UnionInputS
     }
 }
 
+
+class BoolInput extends React.Component<{}, boolean> {
+    constructor(props: {}) {
+        super(props);
+        this.state = false;
+    }
+    render() {
+        return <input type='checkbox' checked={this.state} onChange={(e) => this.setState(e.target.checked)}></input>
+    }
+}
+
 interface State {
     value: any
 }

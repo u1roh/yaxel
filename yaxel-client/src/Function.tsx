@@ -3,15 +3,18 @@ import TypedInput from './TypedInput'
 import * as yaxel from './yaxel'
 
 interface FunArgInputProps {
-    params: yaxel.TypedItem[] | undefined;
+    params: yaxel.TypedItem[];
     onSubmit: ((args: any[]) => void);
 }
 
 class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
     constructor(props: FunArgInputProps) {
         super(props);
-        this.state = { args: new Array<any>(props.params?.length) };
-
+        let args = new Array<any>(props.params.length);
+        for (let i = 0; i < args.length; ++i) {
+            args[i] = yaxel.defaultValueOf(props.params[i].type);
+        }
+        this.state = { args: args };
     }
     private onChange(i: number, x: any) {
         console.log("FunArgsInput#inChange(" + i + ", " + JSON.stringify(x) + ")");
@@ -21,7 +24,7 @@ class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
     }
     render() {
         return (<form>
-            {this.props.params?.map((p, i) => <TypedInput name={p.name} type={p.type} onChange={(x) => this.onChange(i, x)} />)}
+            {this.props.params?.map((p, i) => <TypedInput name={p.name} type={p.type} value={this.state.args[i]} onChange={(x) => this.onChange(i, x)} />)}
             <input type="button" onClick={(e) => this.props.onSubmit(this.state.args)} value="Execute"></input>
         </form>);
     }
@@ -54,7 +57,10 @@ class Function extends React.Component<FunctionProps, FunctionState> {
                 <hr></hr>
                 <h2>'<span className="Function-name">{this.state.func?.name}</span>' function</h2>
                 <h3>params</h3>
-                <FunArgsInput params={this.state.func?.params} onSubmit={this.invoke}></FunArgsInput>
+                {
+                    this.state.func === null ? <span></span> :
+                        <FunArgsInput params={this.state.func.params} onSubmit={this.invoke}></FunArgsInput>
+                }
                 <h3>return</h3>
                 <p>{JSON.stringify(this.state.func?.ret)}</p>
             </div>

@@ -4,45 +4,37 @@ import './TypedInput.css';
 
 interface UnionInputProps {
     union: yaxel.UnionType;
+    value: any;
     onChange: (value: any) => void;
 }
 
-interface UnionInputState {
-    selectedCaseName: string
-    selectedCaseType: yaxel.Type | null
-}
-
-class UnionInput extends React.Component<UnionInputProps, UnionInputState> {
-    constructor(props: UnionInputProps) {
-        super(props);
-        this.state = {
-            selectedCaseName: props.union.cases[0].name,
-            selectedCaseType: props.union.cases[0].type
-        }
-    }
+class UnionInput extends React.Component<UnionInputProps> {
+    private selectedIndex = 0;
     private setSelectedIndex(i: number) {
-        this.setState({
-            selectedCaseName: this.props.union.cases[i].name,
-            selectedCaseType: this.props.union.cases[i].type
+        this.props.onChange({
+            name: this.props.union.cases[i].name,
+            value: yaxel.defaultValueOf(this.props.union.cases[i].type)
         });
-        if (this.props.union.cases[i].type == null) {
-            this.props.onChange(this.props.union.cases[i].name);
-        }
     }
     render() {
         return (<div>
-            <select onChange={(e) => this.setSelectedIndex(e.target.selectedIndex)}>
+            <select onChange={(e) => this.setSelectedIndex(e.target.selectedIndex)} value={this.props.value["name"]}>
                 {this.props.union.cases.map(item =>
                     <option value={item.name}>{item.name}</option>)}
             </select>
-            {this.state.selectedCaseType == null ?
-                <span></span> :
-                <TypedInput name='' type={this.state.selectedCaseType}
-                    onChange={x => {
-                        const obj: any = {};
-                        obj[this.state.selectedCaseName] = x;
-                        this.props.onChange(obj);
-                    }} />}
+            {
+                (() => {
+                    const item = this.props.union.cases.find(item => item.name == this.props.value["name"]);
+                    return item !== undefined ?
+                        <TypedInput name='' type={item.type} value={this.props.value["value"]}
+                            onChange={x => {
+                                const obj = this.props.value;
+                                obj.value = x;
+                                this.props.onChange(obj);
+                            }} />
+                        : <span></span>;
+                })()
+            }
         </div>);
     }
 }
@@ -50,14 +42,11 @@ class UnionInput extends React.Component<UnionInputProps, UnionInputState> {
 interface TypedInputProps {
     name: string;
     type: yaxel.Type;
+    value: any;
     onChange: (value: any) => void;
 }
 
-class TypedInput extends React.Component<TypedInputProps, { value: any }> {
-    constructor(props: TypedInputProps) {
-        super(props);
-        this.state = { value: null };
-    }
+class TypedInput extends React.Component<TypedInputProps> {
     private caption() {
         return this.props.name.length === 0 ? "" : this.props.name + " = ";
     }
@@ -68,6 +57,8 @@ class TypedInput extends React.Component<TypedInputProps, { value: any }> {
     }
     private renderInternal() {
         switch (this.props.type) {
+            case null:
+                return <span></span>;
             case "int":
             case "float":
             case "string":
@@ -87,18 +78,18 @@ class TypedInput extends React.Component<TypedInputProps, { value: any }> {
                     case 'record':
                         const onChange = (name: string, value: any) => {
                             console.log("record / onChange: name = " + name + ", value = " + JSON.stringify(value));
-                            const record = this.state.value ? this.state.value : {};
+                            const record = this.props.value;
                             record[name] = value;
                             this.onChange(record);
                         };
                         return (<div>
                             <div>{this.caption()}{this.props.type.name}</div>
                             {this.props.type.fields.map(item =>
-                                <div><TypedInput name={item.name} type={item.type} onChange={(x) => onChange(item.name, x)} /></div>
+                                <div><TypedInput name={item.name} type={item.type} value={this.props.value[item.name]} onChange={(x) => onChange(item.name, x)} /></div>
                             )}
                         </div>);
                     case 'union':
-                        return <div>{this.caption()}<UnionInput union={this.props.type} onChange={x => this.onChange(x)} /></div>;
+                        return <div>{this.caption()}<UnionInput union={this.props.type} value={this.props.value} onChange={x => this.onChange(x)} /></div>;
                     default:
                         return JSON.stringify(this.props.type);
                 }

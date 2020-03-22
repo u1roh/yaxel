@@ -11,11 +11,16 @@ module Functions =
         | SUS304
         | SPCC
 
+    type Foo = {
+        X: int
+        Y: bool
+    }
     type Input = {
         A: int
         B: double
         C: Material
         D: string option
+        E: Foo option
     }
 
     let hoge (x: Input) =
@@ -60,6 +65,13 @@ let main args =
                 |> Meta.ofMethod
                 |> Meta.funToJsonValue
                 |> writer.Write
+        elif pathes.Length >= 2 && pathes.[0] = "invoke" then
+            use reader = new StreamReader(con.Request.InputStream)
+            let args = reader.ReadToEnd()
+            printfn "invoke: func = %s, args = %s" pathes.[1] args
+            use writer = new StreamWriter (out)
+            sprintf "invoke: func = %s, args = %s" pathes.[1] args
+            |> writer.Write
         else
             let path =
                 if path = "" then "index.html" else path

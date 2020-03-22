@@ -21,6 +21,19 @@ class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
         const state = this.state;
         state.args[i] = x;
         this.setState(state);
+        // これはうまくいかない
+        //this.props.onSubmit(state.args);
+
+        // ここで fetch すれば動く（が ”hoge" がハードコーディング）
+        fetch('invoke/hoge', {
+            method: 'POST',
+            body: JSON.stringify(state.args),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.text())
+            .then(text => console.log(text));
     }
     render() {
         return (<form>
@@ -44,7 +57,19 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         this.state = { func: null };
     }
     private invoke(value: any) {
-        console.log("Function#invoke(" + value + ")");
+        console.log("Function#invoke(" + JSON.stringify(value) + ")");
+        // 何故か props, state が undefined になってしまう
+        console.log(this.props);
+        console.log(this.state);
+        fetch('invoke/' + this.props.name, {
+            method: 'POST',
+            body: JSON.stringify(value),
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+            .then(response => response.json())
+            .then(json => console.log(json));
     }
     componentDidMount() {
         fetch('function/' + this.props.name)

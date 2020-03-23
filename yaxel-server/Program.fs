@@ -4,6 +4,7 @@ open System.IO
 open System.Linq
 open System.Threading.Tasks
 open Microsoft.FSharp.Reflection
+open FSharp.Data
 
 module Functions =
 
@@ -69,6 +70,8 @@ let main args =
             use reader = new StreamReader(con.Request.InputStream)
             let args = reader.ReadToEnd()
             printfn "invoke: func = %s, args = %s" pathes.[1] args
+            let json = JsonValue.Parse args
+            printfn "json = %A" json
             use writer = new StreamWriter (out)
             sprintf "invoke: func = %s, args = %s" pathes.[1] args
             |> writer.Write

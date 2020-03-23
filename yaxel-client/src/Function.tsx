@@ -21,19 +21,7 @@ class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
         const state = this.state;
         state.args[i] = x;
         this.setState(state);
-        // これはうまくいかない
-        //this.props.onSubmit(state.args);
-
-        // ここで fetch すれば動く（が ”hoge" がハードコーディング）
-        fetch('invoke/hoge', {
-            method: 'POST',
-            body: JSON.stringify(state.args),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        })
-            .then(response => response.text())
-            .then(text => console.log(text));
+        this.props.onSubmit(state.args);
     }
     render() {
         return (<form>
@@ -58,9 +46,6 @@ class Function extends React.Component<FunctionProps, FunctionState> {
     }
     private invoke(value: any) {
         console.log("Function#invoke(" + JSON.stringify(value) + ")");
-        // 何故か props, state が undefined になってしまう
-        console.log(this.props);
-        console.log(this.state);
         fetch('invoke/' + this.props.name, {
             method: 'POST',
             body: JSON.stringify(value),
@@ -68,8 +53,8 @@ class Function extends React.Component<FunctionProps, FunctionState> {
                 'Content-Type': 'application/json'
             }
         })
-            .then(response => response.json())
-            .then(json => console.log(json));
+            .then(response => response.text())
+            .then(text => console.log(text));
     }
     componentDidMount() {
         fetch('function/' + this.props.name)
@@ -84,7 +69,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
                 <h3>params</h3>
                 {
                     this.state.func === null ? <span></span> :
-                        <FunArgsInput params={this.state.func.params} onSubmit={this.invoke}></FunArgsInput>
+                        <FunArgsInput params={this.state.func.params} onSubmit={x => this.invoke(x)}></FunArgsInput>
                 }
                 <h3>return</h3>
                 <p>{JSON.stringify(this.state.func?.ret)}</p>

@@ -2,6 +2,7 @@ module Meta
 
 open System.Reflection
 open Microsoft.FSharp.Reflection
+open FSharp.Data
 
 type Type =
     | Int
@@ -67,86 +68,56 @@ let rec ofSystemType (t: System.Type) =
     else
         Unknown t
 
-type JsonValue =
-    | JsonNull
-    | JsonNumber of float
-    | JsonString of string
-    | JsonArray of JsonValue []
-    | JsonObject of Map<string, JsonValue>
-    override this.ToString() =
-        match this with
-        | JsonNull -> "null"
-        | JsonNumber x -> x.ToString()
-        | JsonString s -> sprintf "\"%s\"" s
-        | JsonArray a ->
-            a
-            |> Array.map (fun x -> x.ToString())
-            |> String.concat ","
-            |> sprintf "[%s]"
-        | JsonObject x ->
-            x
-            |> Map.toSeq
-            |> Seq.map (fun (key, value) -> sprintf "\"%s\":%O" key value)
-            |> String.concat ","
-            |> sprintf "{%s}"
-
-
 let rec toJsonValue (t: Type) =
     match t with
-    | Int -> JsonString "int"
-    | Float -> JsonString "float"
-    | Bool -> JsonString "bool"
-    | String -> JsonString "string"
+    | Int -> JsonValue.String "int"
+    | Float -> JsonValue.String "float"
+    | Bool -> JsonValue.String "bool"
+    | String -> JsonValue.String "string"
     | Tuple x ->
         printfn "toJsonValue: Tuple %A" x
         match x with
-        | [] -> JsonNull
+        | [] -> JsonValue.Null
         | [ t ] -> toJsonValue t
         | _ ->
             x
             |> List.map toJsonValue
             |> List.toArray
-            |> JsonArray
+            |> JsonValue.Array
     | List t ->
-        [ "tag", JsonString "list"
-          "type", toJsonValue t ]
-        |> Map.ofList
-        |> JsonObject
+        [| "tag", JsonValue.String "list"
+           "type", toJsonValue t |]
+        |> JsonValue.Record
     | Fun(paramType, returnType) ->
-        [ "tag", JsonString "fun"
-          "param", toJsonValue paramType
-          "ret", toJsonValue returnType ]
-        |> Map.ofList
-        |> JsonObject
+        [| "tag", JsonValue.String "fun"
+           "param", toJsonValue paramType
+           "ret", toJsonValue returnType |]
+        |> JsonValue.Record
     | Record r ->
-        [ "tag", JsonString "record"
-          "name", JsonString r.RecordName
-          "fields",
-          r.RecordFields
-          |> List.map (fun item ->
-              [ "name", JsonString item.Name
-                "type", toJsonValue item.Type ]
-              |> Map.ofList
-              |> JsonObject)
-          |> List.toArray
-          |> JsonArray ]
-        |> Map.ofList
-        |> JsonObject
+        [| "tag", JsonValue.String "record"
+           "name", JsonValue.String r.RecordName
+           "fields",
+           r.RecordFields
+           |> List.map (fun item ->
+               [| "name", JsonValue.String item.Name
+                  "type", toJsonValue item.Type |]
+               |> JsonValue.Record)
+           |> List.toArray
+           |> JsonValue.Array |]
+        |> JsonValue.Record
     | Union u ->
-        [ "tag", JsonString "union"
-          "name", JsonString u.UnionName
-          "cases",
-          u.UnionCases
-          |> List.map (fun item ->
-              [ "name", JsonString item.Name
-                "type", toJsonValue item.Type ]
-              |> Map.ofList
-              |> JsonObject)
-          |> List.toArray
-          |> JsonArray ]
-        |> Map.ofList
-        |> JsonObject
-    | Unknown t -> t.FullName |> JsonString
+        [| "tag", JsonValue.String "union"
+           "name", JsonValue.String u.UnionName
+           "cases",
+           u.UnionCases
+           |> List.map (fun item ->
+               [| "name", JsonValue.String item.Name
+                  "type", toJsonValue item.Type |]
+               |> JsonValue.Record)
+           |> List.toArray
+           |> JsonValue.Array |]
+        |> JsonValue.Record
+    | Unknown t -> t.FullName |> JsonValue.String
 
 type Function =
     { FunName: string
@@ -164,16 +135,14 @@ let ofMethod (m: MethodInfo) =
           |> Array.toList }
 
 let funToJsonValue f =
-    [ "name", JsonString f.FunName
-      "ret", toJsonValue f.FunReturnType
-      "params",
-      f.FunParams
-      |> List.map (fun p ->
-          [ "name", JsonString p.Name
-            "type", toJsonValue p.Type ]
-          |> Map.ofList
-          |> JsonObject)
-      |> List.toArray
-      |> JsonArray ]
-    |> Map.ofList
-    |> JsonObject
+    [| "name", JsonValue.String f.FunName
+       "ret", toJsonValue f.FunReturnType
+       "params",
+       f.FunParams
+       |> List.map (fun p ->
+           [| "name", JsonValue.String p.Name
+              "type", toJsonValue p.Type |]
+           |> JsonValue.Record)
+       |> List.toArray
+       |> JsonValue.Array |]
+    |> JsonValue.Record

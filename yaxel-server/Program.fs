@@ -5,6 +5,7 @@ open System.Linq
 open System.Threading.Tasks
 open Microsoft.FSharp.Reflection
 open FSharp.Data
+open Microsoft.FSharp.Reflection
 
 module Functions =
 
@@ -32,6 +33,11 @@ module Functions =
 
     let simple (x: int) =
         x * 2
+
+let valueToJson (value: obj) =
+    match value with
+    | :? int as x -> JsonValue.Number (decimal x)
+    | _ -> JsonValue.Null
 
 [<EntryPoint>]
 let main args =
@@ -82,11 +88,10 @@ let main args =
                         |> Array.zip a
                         |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
                     printfn "args = %A" args
-                    let ret = method.Invoke (Unchecked.defaultof<_>, args)
+                    let ret = method.Invoke (Unchecked.defaultof<_>, args) |> valueToJson
                     printfn "%O" ret
                     use writer = new StreamWriter (out)
-                    sprintf "%A" ret
-                    |> writer.Write
+                    ret.ToString() |> writer.Write
                 | _ ->
                     failwith "JSON is not array"
             else

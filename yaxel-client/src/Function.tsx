@@ -36,13 +36,14 @@ interface FunctionProps {
 }
 
 interface FunctionState {
-    func: yaxel.Fun | null
+    func: yaxel.Fun | null;
+    result: any;
 }
 
 class Function extends React.Component<FunctionProps, FunctionState> {
     constructor(props: FunctionProps) {
         super(props);
-        this.state = { func: null };
+        this.state = { func: null, result: null };
     }
     private invoke(value: any) {
         console.log("Function#invoke(" + JSON.stringify(value) + ")");
@@ -54,12 +55,18 @@ class Function extends React.Component<FunctionProps, FunctionState> {
             }
         })
             .then(response => response.text())
-            .then(text => console.log(text));
+            .then(text => {
+                console.log(text);
+                this.setState({
+                    func: this.state.func,
+                    result: JSON.parse(text)
+                });
+            });
     }
     componentDidMount() {
         fetch('function/' + this.props.name)
             .then(response => response?.text())
-            .then(t => this.setState({ func: JSON.parse(t) }));
+            .then(t => this.setState({ func: JSON.parse(t), result: null }));
     }
     render() {
         return (
@@ -72,7 +79,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
                         <FunArgsInput params={this.state.func.params} onSubmit={x => this.invoke(x)}></FunArgsInput>
                 }
                 <h3>return</h3>
-                <p>{JSON.stringify(this.state.func?.ret)}</p>
+                <p>{JSON.stringify(this.state.result)}</p>
             </div>
         );
     }

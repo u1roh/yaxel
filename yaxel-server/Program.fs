@@ -73,20 +73,22 @@ let main args =
                 printfn "invoke: func = %s, args = %s" pathes.[1] args
                 let json = JsonValue.Parse args
                 printfn "json = %A" json
-                let method =
-                    funcModule.GetMethod pathes.[1]
-                    |> Meta.ofMethod
+                let method = funcModule.GetMethod pathes.[1]
                 match json with
                 | JsonValue.Array a ->
-                    method.FunParams
-                    |> List.toArray
-                    |> Array.zip a
-                    |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
-                    |> printfn "args = %A"
-                | _ -> failwith "JSON is not array"
-                use writer = new StreamWriter (out)
-                sprintf "invoke: func = %s, args = %s" pathes.[1] args
-                |> writer.Write
+                    let args =
+                        (Meta.ofMethod method).FunParams
+                        |> List.toArray
+                        |> Array.zip a
+                        |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
+                    printfn "args = %A" args
+                    let ret = method.Invoke (Unchecked.defaultof<_>, args)
+                    printfn "%O" ret
+                    use writer = new StreamWriter (out)
+                    sprintf "%A" ret
+                    |> writer.Write
+                | _ ->
+                    failwith "JSON is not array"
             else
                 let path =
                     if path = "" then "index.html" else path

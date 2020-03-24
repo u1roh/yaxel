@@ -157,6 +157,7 @@ let rec deserialize (t: Type) (json: JsonValue) =
     | Type.Float, JsonValue.Number x -> x |> float :> obj
     | Type.Bool, JsonValue.Boolean x -> x :> obj
     | Type.String, JsonValue.String x -> x :> obj
+    | Type.Tuple [], JsonValue.Null -> Unchecked.defaultof<obj>
     | Type.Tuple ts, JsonValue.Array x -> failwith "not implemented"
     | Type.List t, JsonValue.Array x ->
         x
@@ -177,12 +178,16 @@ let rec deserialize (t: Type) (json: JsonValue) =
             |> function
             | JsonValue.String name -> name
             | _ -> failwith "`name` not found"
-        let value =
+        let args =
             x
-            |> Array.find (fst >> (=) "value")
-            |> snd
-            |> deserialize (t.UnionCases |> List.find (fun case -> case.Name = name)).Type
+            |> Array.tryFind (fst >> (=) "value")
+            |> Option.map snd
+            |> Option.filter ((<>) JsonValue.Null)
+            |> Option.map (deserialize (t.UnionCases |> List.find (fun case -> case.Name = name)).Type)
+            |> function
+            | Some(x) -> [| x |]
+            | None -> [||]
 
         let case = FSharpType.GetUnionCases t.UnionSystemType |> Array.find (fun case -> case.Name = name)
-        FSharpValue.MakeUnion(case, [| value |])
+        FSharpValue.MakeUnion(case, args)
     | _ -> failwithf "Meta.deserialize: invalid input > t = %A, json = %A" t json

@@ -60,14 +60,20 @@ class TypedInput extends React.Component<TypedInputProps> {
             case null:
                 return <span></span>;
             case "int":
+                return <span>{this.caption()}
+                    <input value={this.props.value} onChange={(e) => this.onChange(Number.parseInt(e.target.value))}></input>
+                </span>;
             case "float":
+                return <span>{this.caption()}
+                    <input value={this.props.value} onChange={(e) => this.onChange(Number.parseFloat(e.target.value))}></input>
+                </span>;
             case "string":
                 return <span>{this.caption()}
-                    <input onChange={(e) => this.onChange(e.target.value)}></input>
+                    <input value={this.props.value} onChange={(e) => this.onChange(e.target.value)}></input>
                 </span>;
             case "bool":
                 return <span>
-                    <input type='checkbox' onChange={(e) => this.onChange(e.target.checked)}></input>
+                    <input type='checkbox' checked={this.props.value} onChange={(e) => this.onChange(e.target.checked)}></input>
                     <label>{this.props.name}</label>
                 </span>;
             default:

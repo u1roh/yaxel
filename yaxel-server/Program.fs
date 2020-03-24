@@ -25,8 +25,13 @@ module Functions =
         E: Foo option
     }
 
+    type Output = {
+        Number: int
+        Material: Material
+    }
+
     let hoge (x: Input) =
-        x.A + 10
+        { Number = x.A + 10; Material = x.C }
 
     let piyo (x: Material) =
         "buzz"
@@ -35,9 +40,12 @@ module Functions =
         x * 2
 
 let valueToJson (value: obj) =
+    if isNull value then JsonValue.Null else
     match value with
     | :? int as x -> JsonValue.Number (decimal x)
-    | _ -> JsonValue.Null
+    | :? float as x -> JsonValue.Number (decimal x)
+    | :? string as x -> JsonValue.String x
+    | _ -> JsonValue.String (value.ToString())
 
 [<EntryPoint>]
 let main args =

@@ -6,6 +6,7 @@ open System.Threading.Tasks
 open Microsoft.FSharp.Reflection
 open FSharp.Data
 open Microsoft.FSharp.Reflection
+open FSharp.Compiler.SourceCodeServices
 
 module Functions =
 
@@ -47,8 +48,44 @@ let valueToJson (value: obj) =
     | :? string as x -> JsonValue.String x
     | _ -> JsonValue.String (value.ToString())
 
+let sampleFSharpCode = """
+module Sample
+let sample a = a + 1
+"""
+
 [<EntryPoint>]
 let main args =
+    do
+        let path = Path.GetTempFileName()
+        let srcPath = Path.ChangeExtension (path, ".fs")
+        let dllPath = Path.ChangeExtension (path, ".dll")
+        printfn "srcPath = %s" srcPath
+        File.WriteAllText(srcPath, sampleFSharpCode)
+        let scs = FSharpChecker.Create()
+        let errors, exitCode, asm =
+            scs.CompileToDynamicAssembly(
+                [|
+                    "fsc.exe"
+                    "--noframework"
+                    "-r"; @"/usr/share/dotnet/sdk/3.0.103/FSharp/FSharp.Core.dll"
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "mscorlib.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "netstandard.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Runtime.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Runtime.Numerics.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Private.CoreLib.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Collections.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Net.Requests.dll"))
+                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Net.WebClient.dll"))
+                    "-o"; dllPath
+                    "-a"; srcPath
+                |],
+                execute = None)
+            |> Async.RunSynchronously
+        printfn "errors = %A" errors
+        printfn "exitCode = %A" exitCode
+        printfn "asm = %A" asm
+        printfn "%s" <| System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+
     let basePath = IO.Path.Combine(IO.Directory.GetCurrentDirectory(), "../yaxel-client/build")
     let basePath = IO.Path.GetFullPath basePath
     printfn "basePath = %s" basePath

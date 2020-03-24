@@ -68,6 +68,17 @@ let main args =
     | Error errors -> printfn "Error: %A" errors
     | _ -> ()
 
+    let watcher =
+        let watcher = new System.IO.FileSystemWatcher()
+        watcher.Path <- Path.GetDirectoryName userPath
+        watcher.Filter <- "*.fs"
+        watcher.NotifyFilter <- IO.NotifyFilters.FileName ||| IO.NotifyFilters.DirectoryName ||| IO.NotifyFilters.LastWrite
+        watcher.EnableRaisingEvents <- true
+        watcher.Changed |> Event.add (printfn "flle changed: %O")
+        printfn "watcher.Path = %s" watcher.Path
+        printfn "watcher.Filter = %s" watcher.Filter
+        watcher
+
     let listener = new System.Net.HttpListener()
     listener.Prefixes.Add "http://*/"
     listener.Start()

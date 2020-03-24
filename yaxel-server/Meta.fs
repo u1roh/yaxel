@@ -21,11 +21,13 @@ and TypedItem =
       Type: Type }
 
 and RecordType =
-    { RecordName: string
+    { RecordSystemType: System.Type
+      RecordName: string
       RecordFields: TypedItem list }
 
 and UnionType =
-    { UnionName: string
+    { UnionSystemType: System.Type
+      UnionName: string
       UnionCases: TypedItem list }
 
 let private primitiveTypes =
@@ -41,7 +43,8 @@ let rec ofSystemType (t: System.Type) =
     if contains then
         found
     elif FSharpType.IsRecord t then
-        { RecordName = t.Name
+        { RecordSystemType = t
+          RecordName = t.Name
           RecordFields =
               FSharpType.GetRecordFields t
               |> Array.map (fun prop ->
@@ -50,7 +53,8 @@ let rec ofSystemType (t: System.Type) =
               |> Array.toList }
         |> Record
     elif FSharpType.IsUnion t then
-        { UnionName = t.Name
+        { UnionSystemType = t
+          UnionName = t.Name
           UnionCases =
               FSharpType.GetUnionCases t
               |> Array.map (fun case ->
@@ -146,3 +150,39 @@ let funToJsonValue f =
        |> List.toArray
        |> JsonValue.Array |]
     |> JsonValue.Record
+
+let rec deserialize (t: Type) (json: JsonValue) =
+    match t, json with
+    | Type.Int, JsonValue.Number x -> x |> int :> obj
+    | Type.Float, JsonValue.Number x -> x |> float :> obj
+    | Type.Bool, JsonValue.Boolean x -> x :> obj
+    | Type.String, JsonValue.String x -> x :> obj
+    | Type.Tuple ts, JsonValue.Array x -> failwith "not implemented"
+    | Type.List t, JsonValue.Array x ->
+        x
+        |> Array.map (deserialize t)
+        |> Array.toList :> obj
+    | Type.Record t, JsonValue.Record x ->
+        let values =
+            x
+            |> Array.map (fun (name, json) ->
+                let field = t.RecordFields |> List.find (fun field -> field.Name = name)
+                deserialize field.Type json)
+        FSharpValue.MakeRecord(t.RecordSystemType, values)
+    | Type.Union t, JsonValue.Record x ->
+        let name =
+            x
+            |> Array.find (fst >> (=) "name")
+            |> snd
+            |> function
+            | JsonValue.String name -> name
+            | _ -> failwith "`name` not found"
+        let value =
+            x
+            |> Array.find (fst >> (=) "value")
+            |> snd
+            |> deserialize (t.UnionCases |> List.find (fun case -> case.Name = name)).Type
+
+        let case = FSharpType.GetUnionCases t.UnionSystemType |> Array.find (fun case -> case.Name = name)
+        FSharpValue.MakeUnion(case, [| value |])
+    | _ -> failwithf "Meta.deserialize: invalid input > t = %A, json = %A" t json

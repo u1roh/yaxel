@@ -48,42 +48,56 @@ let main args =
     listener.Start()
     while true do
         let con = listener.GetContext()
-        let path = con.Request.RawUrl.TrimStart '/'
-        let out = con.Response.OutputStream
+        try
+            let path = con.Request.RawUrl.TrimStart '/'
+            let out = con.Response.OutputStream
 
-        let pathes = path.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
-        if pathes.Length > 0 && pathes.[0] = "function" then
-            use writer = new StreamWriter (out)
-            if pathes.Length = 1 then
-                funcModule.GetMethods()
-                |> Array.filter (fun m -> m.IsStatic)
-                |> Array.map (fun m -> sprintf "\"%s\"" m.Name)
-                |> String.concat ","
-                |> sprintf "[%s]"
+            let pathes = path.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
+            if pathes.Length > 0 && pathes.[0] = "function" then
+                use writer = new StreamWriter (out)
+                if pathes.Length = 1 then
+                    funcModule.GetMethods()
+                    |> Array.filter (fun m -> m.IsStatic)
+                    |> Array.map (fun m -> sprintf "\"%s\"" m.Name)
+                    |> String.concat ","
+                    |> sprintf "[%s]"
+                    |> writer.Write
+                else
+                    funcModule.GetMethod pathes.[1]
+                    |> Meta.ofMethod
+                    |> Meta.funToJsonValue
+                    |> writer.Write
+            elif pathes.Length >= 2 && pathes.[0] = "invoke" then
+                use reader = new StreamReader(con.Request.InputStream)
+                let args = reader.ReadToEnd()
+                printfn "invoke: func = %s, args = %s" pathes.[1] args
+                let json = JsonValue.Parse args
+                printfn "json = %A" json
+                let method =
+                    funcModule.GetMethod pathes.[1]
+                    |> Meta.ofMethod
+                match json with
+                | JsonValue.Array a ->
+                    method.FunParams
+                    |> List.toArray
+                    |> Array.zip a
+                    |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
+                    |> printfn "args = %A"
+                | _ -> failwith "JSON is not array"
+                use writer = new StreamWriter (out)
+                sprintf "invoke: func = %s, args = %s" pathes.[1] args
                 |> writer.Write
             else
-                funcModule.GetMethod pathes.[1]
-                |> Meta.ofMethod
-                |> Meta.funToJsonValue
-                |> writer.Write
-        elif pathes.Length >= 2 && pathes.[0] = "invoke" then
-            use reader = new StreamReader(con.Request.InputStream)
-            let args = reader.ReadToEnd()
-            printfn "invoke: func = %s, args = %s" pathes.[1] args
-            let json = JsonValue.Parse args
-            printfn "json = %A" json
-            use writer = new StreamWriter (out)
-            sprintf "invoke: func = %s, args = %s" pathes.[1] args
-            |> writer.Write
-        else
-            let path =
-                if path = "" then "index.html" else path
-            let path = Path.Combine (basePath, path)
-            if IO.File.Exists path then
-                let content = IO.File.ReadAllBytes path
-                out.Write(content, 0, content.Length)
-            else
-                printfn "file not found: %A" path
+                let path =
+                    if path = "" then "index.html" else path
+                let path = Path.Combine (basePath, path)
+                if IO.File.Exists path then
+                    let content = IO.File.ReadAllBytes path
+                    out.Write(content, 0, content.Length)
+                else
+                    printfn "file not found: %A" path
+        with e ->
+            printfn "error: %A" e
         
         con.Response.Close()
 

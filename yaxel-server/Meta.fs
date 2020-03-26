@@ -61,9 +61,6 @@ let rec ofSystemType (t: System.Type) =
                   { Name = case.Name
                     Type =
                         case.GetFields()
-                        |> Array.map (fun x ->
-                            printfn "case field: %A" x
-                            x)
                         |> Array.map (fun prop -> ofSystemType prop.PropertyType)
                         |> Array.toList
                         |> Tuple })
@@ -79,7 +76,6 @@ let rec toJsonValue (t: Type) =
     | Bool -> JsonValue.String "bool"
     | String -> JsonValue.String "string"
     | Tuple x ->
-        printfn "toJsonValue: Tuple %A" x
         match x with
         | [] -> JsonValue.Null
         | [ t ] -> toJsonValue t

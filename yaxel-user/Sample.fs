@@ -13,14 +13,15 @@ type Input =
       B: double
       C: Material
       D: string option
-      E: Foo option }
+      E: Foo option
+      F: int }
 
 type Output =
     { Number: int
       Material: Material }
 
 let hoge (x: Input) =
-    { Number = x.A + 10
+    { Number = x.A * 23
       Material = x.C }
 
 let piyo (x: Material) = "buzz"

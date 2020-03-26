@@ -65,5 +65,12 @@ export function defaultValueOf(type: Type): any {
                 return { name: type.cases[0].name, value: defaultValueOf(type.cases[0].type) };
             }
     }
+}
 
+export function defaultArgsOf(fun: Fun): any[] {
+    let args = new Array<any>(fun.params.length);
+    for (let i = 0; i < args.length; ++i) {
+        args[i] = defaultValueOf(fun.params[i].type);
+    }
+    return args;
 }

@@ -63,6 +63,7 @@ let main args =
     let userPath = IO.Path.GetFullPath userPath
     printfn "userPath = %s" userPath
 
+    let mutable breathCount = 0
     let mutable funcModule = Compilation.fromSourceFile userPath |> Result.map (fun asm -> asm.GetType "Sample")
     match funcModule with
     | Error errors -> printfn "Error: %A" errors
@@ -74,7 +75,14 @@ let main args =
         watcher.Filter <- "*.fs"
         watcher.NotifyFilter <- IO.NotifyFilters.FileName ||| IO.NotifyFilters.DirectoryName ||| IO.NotifyFilters.LastWrite
         watcher.EnableRaisingEvents <- true
-        watcher.Changed |> Event.add (printfn "flle changed: %O")
+        watcher.Changed |> Event.add (fun e ->
+            printfn "flle changed: %O" e
+            funcModule <- Compilation.fromSourceFile userPath |> Result.map (fun asm -> asm.GetType "Sample")
+            breathCount <- breathCount + 1
+            match funcModule with
+            | Error errors -> printfn "Error: %A" errors
+            | _ -> ()
+            )
         printfn "watcher.Path = %s" watcher.Path
         printfn "watcher.Filter = %s" watcher.Filter
         watcher
@@ -89,7 +97,10 @@ let main args =
             let out = con.Response.OutputStream
 
             let pathes = path.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
-            if pathes.Length > 0 && pathes.[0] = "function" then
+            if pathes.Length > 0 && pathes.[0] = "breath" then
+                use writer = new StreamWriter (out)
+                breathCount.ToString() |> writer.Write 
+            elif pathes.Length > 0 && pathes.[0] = "function" then
                 use writer = new StreamWriter (out)
                 match funcModule with
                 | Ok funcModule ->

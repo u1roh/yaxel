@@ -29,7 +29,10 @@ class FuncList extends React.Component<{}, State> {
 function App() {
   return (
     <div className="App">
-      <FuncList />
+      <div className="left"><FuncList /></div>
+      <div className="right">
+        <textarea className="CodeEditor"></textarea>
+      </div>
     </div>
   );
 }

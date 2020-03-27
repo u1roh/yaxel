@@ -7,14 +7,28 @@ interface State {
 }
 
 class FuncList extends React.Component<{}, State> {
+  private breathCount: number = 0;
   constructor(props: {}) {
     super(props);
     this.state = { functions: [] };
   }
+  private async fetchFunctions() {
+    const res = await fetch('api/function');
+    const txt = await res.text();
+    this.setState({ functions: JSON.parse(txt) });
+  }
   componentDidMount() {
-    fetch('api/function')
-      .then(res => res?.text())
-      .then(body => this.setState({ functions: JSON.parse(body) }));
+    setInterval(async () => {
+      const res = await fetch('api/breath/');
+      const txt = await res.text();
+      const breath = Number.parseInt(txt);
+      if (breath != this.breathCount) {
+        console.log("breath = " + breath);
+        this.breathCount = breath;
+        this.fetchFunctions();
+      }
+    }, 1000);
+    this.fetchFunctions();
   }
   render() {
     return (

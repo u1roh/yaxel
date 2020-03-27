@@ -161,10 +161,22 @@ let rec deserialize (t: Type) (json: JsonValue) =
         |> Array.toList :> obj
     | Type.Record t, JsonValue.Record x ->
         let values =
+            t.RecordFields
+            |> List.toArray
+            |> Array.map (fun field ->
+                x
+                |> Array.find (fst >> (=) field.Name)
+                |> snd
+                |> deserialize field.Type)
+
+        (*
+        let values =
             x
             |> Array.map (fun (name, json) ->
                 let field = t.RecordFields |> List.find (fun field -> field.Name = name)
                 deserialize field.Type json)
+        *)
+
         FSharpValue.MakeRecord(t.RecordSystemType, values)
     | Type.Union t, JsonValue.Record x ->
         let name =

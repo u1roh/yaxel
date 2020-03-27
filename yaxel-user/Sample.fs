@@ -3,7 +3,7 @@ module Sample
 type Material =
     | SUS304
     | SPCC
-    | ABC a
+    | ABC
 
 type Foo =
     { X: int
@@ -26,4 +26,4 @@ let hoge (x: Input) =
 
 let piyo (x: Material) = "buzz"
 
-let simple (x: int) = x * 2
+let foo (a: int) = 10 * a

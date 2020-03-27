@@ -84,19 +84,17 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         this.setState(state);
     }
     componentDidMount() {
-        setInterval(() => {
-            fetch('api/breath/')
-                .then(response => response?.text())
-                .then(txt => {
-                    const breath = Number.parseInt(txt);
-                    if (breath != this.breathCount) {
-                        console.log("breath = " + breath);
-                        this.breathCount = breath;
-                        this.fetchFunction();
-                    }
-                });
-        }, 1000);
         this.fetchFunction();
+    }
+    async componentWillUpdate() {
+        const res = await fetch('api/breath/');
+        const txt = await res.text();
+        const breath = Number.parseInt(txt);
+        if (breath != this.breathCount) {
+            console.log("breath = " + breath);
+            this.breathCount = breath;
+            this.fetchFunction();
+        }
     }
     render() {
         return (

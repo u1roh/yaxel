@@ -17,24 +17,28 @@ let valueToJson (value: obj) =
     | _ -> JsonValue.String (value.ToString())
 
 module Compilation =
+    let private scs = FSharpChecker.Create()
+
     let fromSourceFile srcPath =
         let dllPath = Path.ChangeExtension (srcPath, ".dll")
         printfn "srcPath = %s, dllPath = %s" srcPath dllPath
-        let scs = FSharpChecker.Create()
         let errors, exitCode, asm =
+            let runtimePath =
+                let runtimeDir = System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory()
+                fun dll -> Path.Combine(runtimeDir, dll)
             scs.CompileToDynamicAssembly(
                 [|
                     "fsc.exe"
                     "--noframework"
                     "-r"; @"/usr/share/dotnet/sdk/3.0.103/FSharp/FSharp.Core.dll"
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "mscorlib.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "netstandard.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Runtime.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Runtime.Numerics.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Private.CoreLib.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Collections.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Net.Requests.dll"))
-                    "-r"; (Path.Combine(System.Runtime.InteropServices.RuntimeEnvironment.GetRuntimeDirectory(), "System.Net.WebClient.dll"))
+                    "-r"; runtimePath "mscorlib.dll"
+                    "-r"; runtimePath "netstandard.dll"
+                    "-r"; runtimePath "System.Runtime.dll"
+                    "-r"; runtimePath "System.Runtime.Numerics.dll"
+                    "-r"; runtimePath "System.Private.CoreLib.dll"
+                    "-r"; runtimePath "System.Collections.dll"
+                    "-r"; runtimePath "System.Net.Requests.dll"
+                    "-r"; runtimePath "System.Net.WebClient.dll"
                     "-o"; dllPath
                     "-a"; srcPath
                 |],

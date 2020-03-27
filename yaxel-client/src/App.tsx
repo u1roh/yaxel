@@ -12,7 +12,7 @@ class FuncList extends React.Component<{}, State> {
     this.state = { functions: [] };
   }
   componentDidMount() {
-    fetch('function')
+    fetch('api/function')
       .then(res => res?.text())
       .then(body => this.setState({ functions: JSON.parse(body) }));
   }

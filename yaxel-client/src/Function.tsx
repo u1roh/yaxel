@@ -49,7 +49,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
     }
     private async invoke(args: any[]): Promise<any> {
         console.log("Function#invoke(" + JSON.stringify(args) + ")");
-        const response = await fetch('invoke/' + this.props.name, {
+        const response = await fetch('api/invoke/' + this.props.name, {
             method: 'POST',
             body: JSON.stringify(args),
             headers: {
@@ -67,7 +67,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
     }
     private async fetchFunction() {
         console.log("Function#fetchFunction()")
-        const response = await fetch('function/' + this.props.name);
+        const response = await fetch('api/function/' + this.props.name);
         const txt = await response.text();
         const fun: yaxel.Fun = JSON.parse(txt);
         const args = yaxel.defaultArgsOf(fun);
@@ -77,7 +77,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
     }
     componentDidMount() {
         setInterval(() => {
-            fetch('breath/')
+            fetch('api/breath/')
                 .then(response => response?.text())
                 .then(txt => {
                     const breath = Number.parseInt(txt);

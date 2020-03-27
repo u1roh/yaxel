@@ -42,6 +42,11 @@ module Compilation =
             |> Async.RunSynchronously
         printfn "exitCode = %A" exitCode
         printfn "errors = %A" errors
+        let errorJson =
+            errors
+            |> Array.map (sprintf "\"%O\"")
+            |> String.concat ","
+            |> sprintf "[%s]"
         asm |> Option.iter (fun asm ->
             asm.GetTypes()
             |> Array.filter FSharpType.IsModule
@@ -50,7 +55,7 @@ module Compilation =
             |> Array.iter (printfn "%O"))
         match asm with
         | Some asm -> Ok asm
-        | None -> Error errors
+        | None -> Error errorJson
 
 
 [<EntryPoint>]
@@ -65,9 +70,6 @@ let main args =
 
     let mutable breathCount = 0
     let mutable funcModule = Compilation.fromSourceFile userPath |> Result.map (fun asm -> asm.GetType "Sample")
-    match funcModule with
-    | Error errors -> printfn "Error: %A" errors
-    | _ -> ()
 
     let watcher =
         let watcher = new System.IO.FileSystemWatcher()
@@ -78,11 +80,7 @@ let main args =
         watcher.Changed |> Event.add (fun e ->
             printfn "flle changed: %O" e
             funcModule <- Compilation.fromSourceFile userPath |> Result.map (fun asm -> asm.GetType "Sample")
-            breathCount <- breathCount + 1
-            match funcModule with
-            | Error errors -> printfn "Error: %A" errors
-            | _ -> ()
-            )
+            breathCount <- breathCount + 1)
         printfn "watcher.Path = %s" watcher.Path
         printfn "watcher.Filter = %s" watcher.Filter
         watcher
@@ -96,63 +94,56 @@ let main args =
             let path = con.Request.RawUrl.TrimStart '/'
             let out = con.Response.OutputStream
 
-            let pathes = path.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
-            if pathes.Length > 0 && pathes.[0] = "breath" then
+            if path.StartsWith "api/" then
+                let pathes = path.Split([|'/'|], StringSplitOptions.RemoveEmptyEntries)
                 use writer = new StreamWriter (out)
-                breathCount.ToString() |> writer.Write 
-            elif pathes.Length > 0 && pathes.[0] = "function" then
-                use writer = new StreamWriter (out)
-                match funcModule with
-                | Ok funcModule ->
-                    if pathes.Length = 1 then
+                match pathes.[1..] with
+                | [| "breath" |] -> breathCount.ToString() |> writer.Write 
+                | [| "function" |] ->
+                    match funcModule with
+                    | Ok funcModule ->
                         funcModule.GetMethods()
                         |> Array.filter (fun m -> m.IsStatic)
                         |> Array.map (fun m -> sprintf "\"%s\"" m.Name)
                         |> String.concat ","
                         |> sprintf "[%s]"
                         |> writer.Write
-                    else
-                        funcModule.GetMethod pathes.[1]
+                    | Error e -> writer.Write e
+                | [| "function"; funcName |] ->
+                    match funcModule with
+                    | Ok funcModule ->
+                        funcModule.GetMethod funcName
                         |> Meta.ofMethod
                         |> Meta.funToJsonValue
                         |> writer.Write
-                | Error errors ->
-                    errors
-                    |> Array.map (sprintf "\"%O\"")
-                    |> String.concat ","
-                    |> sprintf "[%s]"
-                    |> writer.Write
-            elif pathes.Length >= 2 && pathes.[0] = "invoke" then
-                use reader = new StreamReader(con.Request.InputStream)
-                let args = reader.ReadToEnd()
-                printfn "invoke: func = %s, args = %s" pathes.[1] args
-                let json = JsonValue.Parse args
-                printfn "json = %A" json
-                match funcModule with
-                | Ok funcModule ->
-                    let method = funcModule.GetMethod pathes.[1]
-                    match json with
-                    | JsonValue.Array a ->
-                        let args =
-                            (Meta.ofMethod method).FunParams
-                            |> List.toArray
-                            |> Array.zip a
-                            |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
-                        printfn "args = %A" args
-                        let ret = method.Invoke (Unchecked.defaultof<_>, args) |> valueToJson
-                        printfn "%O" ret
-                        use writer = new StreamWriter (out)
-                        ret.ToString() |> writer.Write
-                    | _ ->
-                        failwith "JSON is not array"
-                | Error errors ->
-                    use writer = new StreamWriter (out)
-                    errors
-                    |> Array.map (sprintf "\"%O\"")
-                    |> String.concat ","
-                    |> sprintf "[%s]"
-                    |> writer.Write
-                
+                    | Error e -> writer.Write e
+                | [| "invoke"; funcName |] ->
+                    use reader = new StreamReader(con.Request.InputStream)
+                    let args = reader.ReadToEnd()
+                    printfn "invoke: func = %s, args = %s" funcName args
+                    let json = JsonValue.Parse args
+                    printfn "json = %A" json
+                    match funcModule with
+                    | Ok funcModule ->
+                        let method = funcModule.GetMethod funcName
+                        match json with
+                        | JsonValue.Array a ->
+                            let args =
+                                (Meta.ofMethod method).FunParams
+                                |> List.toArray
+                                |> Array.zip a
+                                |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
+                            printfn "args = %A" args
+                            let ret = method.Invoke (Unchecked.defaultof<_>, args) |> valueToJson
+                            printfn "%O" ret
+                            use writer = new StreamWriter (out)
+                            ret.ToString() |> writer.Write
+                        | _ ->
+                            failwith "JSON is not array"
+                    | Error e -> writer.Write e
+                | _ ->
+                    printfn "unknown API: pathes = %A" pathes
+                    writer.Write "Unknwon API"
             else
                 let path =
                     if path = "" then "index.html" else path

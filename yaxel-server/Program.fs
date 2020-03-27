@@ -145,6 +145,9 @@ let main args =
                         | _ ->
                             failwith "JSON is not array"
                     | Error e -> writer.Write e
+                | [| "usercode" |] ->
+                    use reader = new StreamReader(userPath)
+                    reader.ReadToEnd() |> writer.Write
                 | _ ->
                     printfn "unknown API: pathes = %A" pathes
                     writer.Write "Unknwon API"

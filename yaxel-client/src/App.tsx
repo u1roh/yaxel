@@ -26,13 +26,26 @@ class FuncList extends React.Component<{}, State> {
   }
 }
 
+class CodeEditor extends React.Component<{}, { code: string }> {
+  constructor(props: {}) {
+    super(props);
+    this.state = { code: "" };
+  }
+  componentDidMount() {
+    fetch("api/usercode")
+      .then(response => response.text())
+      .then(text => this.setState({ code: text }));
+  }
+  render() {
+    return <textarea className="CodeEditor" value={this.state.code}></textarea>
+  }
+}
+
 function App() {
   return (
     <div className="App">
       <div className="left"><FuncList /></div>
-      <div className="right">
-        <textarea className="CodeEditor"></textarea>
-      </div>
+      <div className="right"><CodeEditor /></div>
     </div>
   );
 }

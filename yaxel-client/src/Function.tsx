@@ -57,7 +57,15 @@ class Function extends React.Component<FunctionProps, FunctionState> {
             }
         });
         const txt = await response.text();
-        return JSON.parse(txt);
+        try {
+            return JSON.parse(txt);
+        }
+        catch (e) {
+            console.log("error @ Function#invoke()");
+            console.log(e);
+            console.log(txt);
+            return txt;
+        }
     }
     private updateArgs(args: any[]) {
         this.invoke(args).then(result => this.setState({

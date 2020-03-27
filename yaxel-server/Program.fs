@@ -148,6 +148,10 @@ let main args =
                 | [| "usercode" |] ->
                     use reader = new StreamReader(userPath)
                     reader.ReadToEnd() |> writer.Write
+                | [| "update-usercode" |] ->
+                    use reader = new StreamReader(con.Request.InputStream)
+                    let userCode = reader.ReadToEnd()
+                    IO.File.WriteAllText (userPath, userCode)
                 | _ ->
                     printfn "unknown API: pathes = %A" pathes
                     writer.Write "Unknwon API"

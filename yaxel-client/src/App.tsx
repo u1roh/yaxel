@@ -36,8 +36,25 @@ class CodeEditor extends React.Component<{}, { code: string }> {
       .then(response => response.text())
       .then(text => this.setState({ code: text }));
   }
+  private onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.ctrlKey && e.key == 's') {
+      e.preventDefault();
+      console.log("Ctrl + S");
+      fetch('api/update-usercode', {
+        method: 'POST',
+        body: this.state.code,
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+    }
+  }
   render() {
-    return <textarea className="CodeEditor" value={this.state.code}></textarea>
+    return <textarea
+      className="CodeEditor"
+      value={this.state.code}
+      onChange={e => this.setState({ code: e.target.value })}
+      onKeyDown={e => this.onKeyDown(e)}></textarea>
   }
 }
 

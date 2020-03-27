@@ -3,6 +3,7 @@ module Sample
 type Material =
     | SUS304
     | SPCC
+    | ABC a
 
 type Foo =
     { X: int
@@ -10,11 +11,10 @@ type Foo =
 
 type Input =
     { A: int
-      B: double
+      //B: double
       C: Material
       D: string option
-      E: Foo option
-      F: int }
+      E: Foo option }
 
 type Output =
     { Number: int

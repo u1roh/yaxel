@@ -30,7 +30,7 @@ module Compilation =
                 [|
                     "fsc.exe"
                     "--noframework"
-                    "-r"; @"/usr/share/dotnet/sdk/3.0.103/FSharp/FSharp.Core.dll"
+                    "-r"; (typeof<unit>).Assembly.Location
                     "-r"; runtimePath "mscorlib.dll"
                     "-r"; runtimePath "netstandard.dll"
                     "-r"; runtimePath "System.Runtime.dll"

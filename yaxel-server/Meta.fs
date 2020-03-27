@@ -155,6 +155,7 @@ let rec deserialize (t: Type) (json: JsonValue) =
     | Type.String, JsonValue.String x -> x :> obj
     | Type.Tuple [], JsonValue.Null -> Unchecked.defaultof<obj>
     | Type.Tuple ts, JsonValue.Array x -> failwith "not implemented"
+    | Type.Tuple [ t ], _ -> deserialize t json
     | Type.List t, JsonValue.Array x ->
         x
         |> Array.map (deserialize t)
@@ -168,15 +169,6 @@ let rec deserialize (t: Type) (json: JsonValue) =
                 |> Array.find (fst >> (=) field.Name)
                 |> snd
                 |> deserialize field.Type)
-
-        (*
-        let values =
-            x
-            |> Array.map (fun (name, json) ->
-                let field = t.RecordFields |> List.find (fun field -> field.Name = name)
-                deserialize field.Type json)
-        *)
-
         FSharpValue.MakeRecord(t.RecordSystemType, values)
     | Type.Union t, JsonValue.Record x ->
         let name =

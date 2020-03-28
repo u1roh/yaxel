@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import Function from './Function'
+import * as api from './api'
 
 interface State {
   functions: string[]
@@ -13,16 +14,13 @@ class FuncList extends React.Component<{}, State> {
     this.state = { functions: [] };
   }
   private async fetchFunctions() {
-    const res = await fetch('api/function');
-    const txt = await res.text();
-    this.setState({ functions: JSON.parse(txt) });
+    const functions = await api.fetchFunctionList();
+    this.setState({ functions: functions });
   }
   componentDidMount() {
     setInterval(async () => {
-      const res = await fetch('api/breath/');
-      const txt = await res.text();
-      const breath = Number.parseInt(txt);
-      if (breath != this.breathCount) {
+      const breath = await api.fetchBreathCount();
+      if (breath !== this.breathCount) {
         console.log("breath = " + breath);
         this.breathCount = breath;
         this.fetchFunctions();
@@ -46,21 +44,14 @@ class CodeEditor extends React.Component<{}, { code: string }> {
     this.state = { code: "" };
   }
   componentDidMount() {
-    fetch("api/usercode")
-      .then(response => response.text())
+    api.fetchUserCode()
       .then(text => this.setState({ code: text }));
   }
   private onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
-    if (e.ctrlKey && e.key == 's') {
+    if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       console.log("Ctrl + S");
-      fetch('api/update-usercode', {
-        method: 'POST',
-        body: this.state.code,
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      });
+      api.updateUserCode(this.state.code);
     }
   }
   render() {

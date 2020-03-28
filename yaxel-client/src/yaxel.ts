@@ -59,7 +59,7 @@ export function defaultValueOf(type: Type): any {
                 return obj;
             }
         case "union":
-            if (type.cases.length == 0) {
+            if (type.cases.length === 0) {
                 return { name: null, value: null };
             } else {
                 return { name: type.cases[0].name, value: defaultValueOf(type.cases[0].type) };

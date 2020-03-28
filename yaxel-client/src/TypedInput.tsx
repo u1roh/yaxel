@@ -24,7 +24,7 @@ class UnionInput extends React.Component<UnionInputProps> {
             </select>
             {
                 (() => {
-                    const item = this.props.union.cases.find(item => item.name == this.props.value["name"]);
+                    const item = this.props.union.cases.find(item => item.name === this.props.value["name"]);
                     return item !== undefined ?
                         <TypedInput name='' type={item.type} value={this.props.value["value"]}
                             onChange={x => {

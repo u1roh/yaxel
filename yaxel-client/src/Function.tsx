@@ -1,6 +1,7 @@
 import React from 'react';
 import TypedInput from './TypedInput'
 import * as yaxel from './yaxel'
+import * as api from './api'
 
 interface FunArgInputProps {
     params: yaxel.TypedItem[];
@@ -47,25 +48,8 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         super(props);
         this.state = { func: null, args: new Array<any>(0), result: null };
     }
-    private async invoke(args: any[]): Promise<any> {
-        console.log("Function#invoke(" + JSON.stringify(args) + ")");
-        const response = await fetch('api/invoke/' + this.props.name, {
-            method: 'POST',
-            body: JSON.stringify(args),
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        const txt = await response.text();
-        try {
-            return JSON.parse(txt);
-        }
-        catch (e) {
-            console.log("error @ Function#invoke()");
-            console.log(e);
-            console.log(txt);
-            return txt;
-        }
+    private invoke(args: any[]): Promise<any> {
+        return api.invokeFunction(this.props.name, args)
     }
     private updateArgs(args: any[]) {
         this.invoke(args).then(result => this.setState({
@@ -74,10 +58,7 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         }));
     }
     private async fetchFunction() {
-        console.log("Function#fetchFunction()")
-        const response = await fetch('api/function/' + this.props.name);
-        const txt = await response.text();
-        const fun: yaxel.Fun = JSON.parse(txt);
+        const fun = await api.fetchFunction(this.props.name);
         const args = yaxel.defaultArgsOf(fun);
         const result = await this.invoke(args);
         const state: FunctionState = { func: fun, args: args, result: result };
@@ -87,10 +68,8 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         this.fetchFunction();
     }
     async componentWillUpdate() {
-        const res = await fetch('api/breath/');
-        const txt = await res.text();
-        const breath = Number.parseInt(txt);
-        if (breath != this.breathCount) {
+        const breath = await api.fetchBreathCount();
+        if (breath !== this.breathCount) {
             console.log("breath = " + breath);
             this.breathCount = breath;
             this.fetchFunction();

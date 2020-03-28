@@ -89,8 +89,13 @@ let main args =
         printfn "watcher.Filter = %s" watcher.Filter
         watcher
 
+    let port =
+        let port = Environment.GetEnvironmentVariable "PORT"
+        if isNull port then "8080" else port
+    printfn "port = %s" port
+
     let listener = new System.Net.HttpListener()
-    listener.Prefixes.Add "http://*/"
+    listener.Prefixes.Add <| sprintf "http://*:%s/" port
     listener.Start()
     while true do
         let con = listener.GetContext()

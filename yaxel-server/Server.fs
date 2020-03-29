@@ -3,10 +3,38 @@ module Yaxel.Server
 open System
 open System.IO
 open System.Net
+open FSharp.Data
 
 type private ServiceApi() =
+
+    let userModules =
+        Directory.GetFiles DynamicModule.SourceDirectory
+        |> Array.map (Path.GetFileNameWithoutExtension >> fun name -> name, DynamicModule name)
+        |> dict
+
+    let getModule name =
+        let contains, found = userModules.TryGetValue name
+        if contains then
+            Ok found
+        else
+            sprintf "module '%s' not found" name
+            |> JsonValue.String
+            |> Error
+
     let userModule = DynamicModule("Sample")
-    member this.BreathCount = userModule.BreathCount
+
+    member this.GetBreathCount modName =
+        getModule modName
+        |> Result.bind (fun m -> m.BreathCount)
+        |> valueToJson
+
+    member this.GetModuleList() =
+        userModules.Keys
+        |> Seq.toArray
+        |> Ok
+        |> valueToJson
+
+    member this.BreathCount = userModule.BreathCount |> valueToJson
     member this.FunctionList = userModule.FunctionList
     member this.GetFuction funcName = userModule.GetFuction funcName
     member this.InvokeFunction(funcName, args) = userModule.InvokeFunction(funcName, args)
@@ -29,6 +57,7 @@ type Server() =
             let pathes = path.Split([| '/' |], StringSplitOptions.RemoveEmptyEntries)
             use writer = new StreamWriter(out)
             match pathes.[1..] with
+            | [| "modules" |] -> api.GetModuleList()
             | [| "breath" |] -> api.BreathCount
             | [| "function" |] -> api.FunctionList
             | [| "function"; funcName |] -> api.GetFuction funcName
@@ -36,7 +65,7 @@ type Server() =
                 use reader = new StreamReader(con.Request.InputStream)
                 let args = reader.ReadToEnd()
                 printfn "invoke: func = %s, args = %s" funcName args
-                let json = FSharp.Data.JsonValue.Parse args
+                let json = JsonValue.Parse args
                 api.InvokeFunction(funcName, json)
             | [| "usercode" |] -> api.GetUserCode()
             | [| "update-usercode" |] ->

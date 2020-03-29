@@ -6,7 +6,7 @@ open System.IO
 open FSharp.Data
 open Microsoft.FSharp.Reflection
 
-let rec private valueToJson (value: obj) =
+let rec valueToJson (value: obj) =
     if isNull value then
         JsonValue.Null
     else
@@ -41,8 +41,10 @@ let rec private valueToJson (value: obj) =
                 JsonValue.String(value.ToString())
 
 type DynamicModule(name) =
+    static let dirPath = Path.Combine(IO.Directory.GetCurrentDirectory(), "../yaxel-user/") |> Path.GetFullPath
+    static do printfn "DynamicModule: dirPath = %s" dirPath
 
-    let path = Path.Combine(IO.Directory.GetCurrentDirectory(), "../yaxel-user/", name + ".fs") |> Path.GetFullPath
+    let path = Path.Combine(dirPath, name + ".fs")
     let build() = DynamicCompilation.fromSourceFile path |> Result.map (fun asm -> asm.GetType name)
 
     let mutable result = build()
@@ -50,20 +52,19 @@ type DynamicModule(name) =
 
     let watcher =
         let watcher =
-            new FileSystemWatcher(Path = Path.GetDirectoryName path, Filter = "*.fs",
-                                  NotifyFilter = NotifyFilters.LastWrite, EnableRaisingEvents = true)
+            new FileSystemWatcher(Path = dirPath, Filter = "*.fs", NotifyFilter = NotifyFilters.LastWrite,
+                                  EnableRaisingEvents = true)
         watcher.Changed
-        |> Event.filter (fun e -> e.Name = name + ".fs")
-        |> Event.add (fun _ ->
+        |> Observable.filter (fun e -> e.Name = name + ".fs")
+        |> Observable.subscribe (fun _ ->
+            printfn "building..."
             result <- build()
             breathCount <- breathCount + 1)
-        watcher
 
-    member this.BreathCount =
-        decimal breathCount
-        |> JsonValue.Number
-        |> Ok
-        |> valueToJson
+    static member SourceDirectory = dirPath
+    member this.Name = name
+
+    member this.BreathCount: Result<int, JsonValue> = Ok breathCount
 
     member this.FunctionList =
         result
@@ -73,9 +74,6 @@ type DynamicModule(name) =
             |> Array.map (fun m -> JsonValue.String m.Name)
             |> JsonValue.Array)
         |> valueToJson
-        |> fun x ->
-            printfn "FunctionList = %O" x
-            x
 
     member this.GetFuction funcName =
         result

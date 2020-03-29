@@ -1,6 +1,7 @@
 import React from 'react';
 import './App.css';
 import Function from './Function'
+import ModuleList from './ModuleList'
 import * as api from './api'
 
 interface State {
@@ -67,6 +68,7 @@ class CodeEditor extends React.Component<{}, { code: string }> {
 function App() {
   return (
     <div className="App">
+      <div className="App-modules"><ModuleList /></div>
       <div className="left"><FuncList /></div>
       <div className="right"><CodeEditor /></div>
     </div>

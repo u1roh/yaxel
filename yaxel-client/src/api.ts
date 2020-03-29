@@ -58,6 +58,10 @@ async function fetchBy<T>(input: RequestInfo, map: (text: string) => T): Promise
     return map(text);
 }
 
+export function fetchModuleList(): Promise<string[]> {
+    return getOr<string[]>('modules', []);
+}
+
 export function fetchFunctionList(): Promise<string[]> {
     return getOr<string[]>('function', []);
 }

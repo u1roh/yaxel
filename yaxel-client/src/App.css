@@ -13,6 +13,10 @@
   height: 100%;
 }
 
+.App-modules {
+  margin: 1em
+}
+
 .left {
   display: inline-block;
   width: 50%;

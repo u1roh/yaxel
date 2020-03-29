@@ -6,6 +6,8 @@ open System.IO
 open FSharp.Data
 open Microsoft.FSharp.Reflection
 
+type Result<'a> = Result<'a, JsonValue>
+
 let rec valueToJson (value: obj) =
     if isNull value then
         JsonValue.Null
@@ -64,16 +66,14 @@ type DynamicModule(name) =
     static member SourceDirectory = dirPath
     member this.Name = name
 
-    member this.BreathCount: Result<int, JsonValue> = Ok breathCount
+    member this.BreathCount: Result<int> = Ok breathCount
 
-    member this.FunctionList =
+    member this.FunctionList: Result<string []> =
         result
         |> Result.map (fun funcModule ->
             funcModule.GetMethods()
             |> Array.filter (fun m -> m.IsStatic)
-            |> Array.map (fun m -> JsonValue.String m.Name)
-            |> JsonValue.Array)
-        |> valueToJson
+            |> Array.map (fun m -> m.Name))
 
     member this.GetFuction funcName =
         result
@@ -81,7 +81,6 @@ type DynamicModule(name) =
             funcModule.GetMethod funcName
             |> Meta.ofMethod
             |> Meta.funToJsonValue)
-        |> valueToJson
 
     member this.InvokeFunction(funcName, args: JsonValue) =
         printfn "InvokeFunction (%s, %A)" funcName args
@@ -97,7 +96,6 @@ type DynamicModule(name) =
                     |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
                 method.Invoke(Unchecked.defaultof<_>, args) |> valueToJson
             | _ -> failwith "JSON is not array")
-        |> valueToJson
 
     member this.GetUserCode() =
         try
@@ -108,7 +106,6 @@ type DynamicModule(name) =
             e.ToString()
             |> JsonValue.String
             |> Error
-        |> valueToJson
 
     member this.UpdateUserCode userCode =
         try
@@ -118,4 +115,3 @@ type DynamicModule(name) =
             e.ToString()
             |> JsonValue.String
             |> Error
-        |> valueToJson

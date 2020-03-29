@@ -21,8 +21,6 @@ type private ServiceApi() =
             |> JsonValue.String
             |> Error
 
-    let userModule = DynamicModule("Sample")
-
     member this.GetBreathCount modName =
         getModule modName
         |> Result.bind (fun m -> m.BreathCount)
@@ -34,12 +32,30 @@ type private ServiceApi() =
         |> Ok
         |> valueToJson
 
-    member this.BreathCount = userModule.BreathCount |> valueToJson
-    member this.FunctionList = userModule.FunctionList
-    member this.GetFuction funcName = userModule.GetFuction funcName
-    member this.InvokeFunction(funcName, args) = userModule.InvokeFunction(funcName, args)
-    member this.GetUserCode() = userModule.GetUserCode()
-    member this.UpdateUserCode userCode = userModule.UpdateUserCode userCode
+    member this.GetFunctionList modName =
+        getModule modName
+        |> Result.bind (fun m -> m.FunctionList)
+        |> valueToJson
+
+    member this.GetFuction(modName, funcName) =
+        getModule modName
+        |> Result.bind (fun m -> m.GetFuction funcName)
+        |> valueToJson
+
+    member this.InvokeFunction(modName, funcName, args) =
+        getModule modName
+        |> Result.bind (fun m -> m.InvokeFunction(funcName, args))
+        |> valueToJson
+
+    member this.GetUserCode modName =
+        getModule modName
+        |> Result.bind (fun m -> m.GetUserCode())
+        |> valueToJson
+
+    member this.UpdateUserCode(modName, userCode) =
+        getModule modName
+        |> Result.bind (fun m -> m.UpdateUserCode userCode)
+        |> valueToJson
 
 
 type Server() =
@@ -58,19 +74,19 @@ type Server() =
             use writer = new StreamWriter(out)
             match pathes.[1..] with
             | [| "modules" |] -> api.GetModuleList()
-            | [| "breath" |] -> api.BreathCount
-            | [| "function" |] -> api.FunctionList
-            | [| "function"; funcName |] -> api.GetFuction funcName
+            | [| "breath" |] -> api.GetBreathCount "Sample"
+            | [| "function" |] -> api.GetFunctionList "Sample"
+            | [| "function"; funcName |] -> api.GetFuction("Sample", funcName)
             | [| "invoke"; funcName |] ->
                 use reader = new StreamReader(con.Request.InputStream)
                 let args = reader.ReadToEnd()
                 printfn "invoke: func = %s, args = %s" funcName args
                 let json = JsonValue.Parse args
-                api.InvokeFunction(funcName, json)
-            | [| "usercode" |] -> api.GetUserCode()
+                api.InvokeFunction("Sample", funcName, json)
+            | [| "usercode" |] -> api.GetUserCode "Sample"
             | [| "update-usercode" |] ->
                 use reader = new StreamReader(con.Request.InputStream)
-                reader.ReadToEnd() |> api.UpdateUserCode
+                api.UpdateUserCode("Sample", reader.ReadToEnd())
             | _ -> sprintf "unknown API: pathes = %A" pathes |> FSharp.Data.JsonValue.String
             |> writer.Write
         else

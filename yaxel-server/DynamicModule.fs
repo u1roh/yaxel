@@ -4,16 +4,39 @@ module Yaxel.DynamicModule
 open System
 open System.IO
 open FSharp.Data
+open Microsoft.FSharp.Reflection
 
-let private valueToJson (value: obj) =
+let rec private valueToJson (value: obj) =
     if isNull value then
         JsonValue.Null
     else
         match value with
+        | :? unit -> JsonValue.Null
         | :? int as x -> JsonValue.Number(decimal x)
         | :? float as x -> JsonValue.Number(decimal x)
         | :? string as x -> JsonValue.String x
-        | _ -> JsonValue.String(value.ToString())
+        | :? JsonValue as x -> x
+        | _ ->
+            let typ = value.GetType()
+            if typ.IsArray then
+                value :?> obj []
+                |> Array.map valueToJson
+                |> JsonValue.Array
+            elif FSharpType.IsUnion typ then
+                let case, objs = FSharpValue.GetUnionFields(value, typ)
+
+                let value =
+                    if isNull objs || objs.Length = 0 then
+                        JsonValue.Null
+                    else
+                        objs
+                        |> Array.map valueToJson
+                        |> JsonValue.Array
+                [| "name", JsonValue.String case.Name
+                   "value", value |]
+                |> JsonValue.Record
+            else
+                JsonValue.String(value.ToString())
 
 type DynamicModule(name) =
 
@@ -29,12 +52,9 @@ type DynamicModule(name) =
                                   NotifyFilter = NotifyFilters.LastWrite, EnableRaisingEvents = true)
         watcher.Changed
         |> Event.filter (fun e -> e.Name = name + ".fs")
-        |> Event.add (fun e ->
-            printfn "flle changed: %O" e.Name
+        |> Event.add (fun _ ->
             result <- build()
             breathCount <- breathCount + 1)
-        printfn "watcher.Path = %s" watcher.Path
-        printfn "watcher.Filter = %s" watcher.Filter
         watcher
 
     member this.BreathCount = breathCount

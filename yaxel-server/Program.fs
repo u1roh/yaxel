@@ -3,7 +3,8 @@
 [<EntryPoint>]
 let main args =
 
-    let server = Server.Server ()
+    let server = Yaxel.Server.Server()
+
     let listener =
         let port =
             let port = Environment.GetEnvironmentVariable "PORT"
@@ -19,9 +20,8 @@ let main args =
         let con = listener.GetContext()
         try
             server.OnRequest con
-        with e ->
-            printfn "error: %A" e
-        
+        with e -> printfn "error: %A" e
+
         con.Response.Close()
 
     0

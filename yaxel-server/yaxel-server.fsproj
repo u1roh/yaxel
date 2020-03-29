@@ -7,6 +7,7 @@
   <ItemGroup>
     <Compile Include="Meta.fs" />
     <Compile Include="DynamicCompilation.fs" />
+    <Compile Include="DynamicModule.fs" />
     <Compile Include="Server.fs" />
     <Compile Include="Program.fs" />
   </ItemGroup>

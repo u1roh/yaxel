@@ -1,4 +1,4 @@
-module Meta
+module Yaxel.Meta
 
 open System.Reflection
 open Microsoft.FSharp.Reflection

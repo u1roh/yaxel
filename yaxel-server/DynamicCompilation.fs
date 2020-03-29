@@ -1,4 +1,4 @@
-module DynamicCompilation
+module Yaxel.DynamicCompilation
 
 open System.IO
 open Microsoft.FSharp.Reflection

@@ -6,7 +6,7 @@ open System.Net
 
 type private ServiceApi() =
     let userModule = DynamicModule("Sample")
-    member this.BreathCount = userModule.BreathCount.ToString()
+    member this.BreathCount = userModule.BreathCount
     member this.FunctionList = userModule.FunctionList
     member this.GetFuction funcName = userModule.GetFuction funcName
     member this.InvokeFunction(funcName, args) = userModule.InvokeFunction(funcName, args)
@@ -29,22 +29,21 @@ type Server() =
             let pathes = path.Split([| '/' |], StringSplitOptions.RemoveEmptyEntries)
             use writer = new StreamWriter(out)
             match pathes.[1..] with
-            | [| "breath" |] -> api.BreathCount |> writer.Write
-            | [| "function" |] -> api.FunctionList |> writer.Write
-            | [| "function"; funcName |] -> api.GetFuction funcName |> writer.Write
+            | [| "breath" |] -> api.BreathCount
+            | [| "function" |] -> api.FunctionList
+            | [| "function"; funcName |] -> api.GetFuction funcName
             | [| "invoke"; funcName |] ->
                 use reader = new StreamReader(con.Request.InputStream)
                 let args = reader.ReadToEnd()
                 printfn "invoke: func = %s, args = %s" funcName args
                 let json = FSharp.Data.JsonValue.Parse args
-                api.InvokeFunction(funcName, json) |> writer.Write
-            | [| "usercode" |] -> api.GetUserCode() |> writer.Write
+                api.InvokeFunction(funcName, json)
+            | [| "usercode" |] -> api.GetUserCode()
             | [| "update-usercode" |] ->
                 use reader = new StreamReader(con.Request.InputStream)
                 reader.ReadToEnd() |> api.UpdateUserCode
-            | _ ->
-                printfn "unknown API: pathes = %A" pathes
-                writer.Write "Unknwon API"
+            | _ -> sprintf "unknown API: pathes = %A" pathes |> FSharp.Data.JsonValue.String
+            |> writer.Write
         else
             let path =
                 Path.Combine

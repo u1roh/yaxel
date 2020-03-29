@@ -28,6 +28,8 @@ let rec private valueToJson (value: obj) =
                 let value =
                     if isNull objs || objs.Length = 0 then
                         JsonValue.Null
+                    elif objs.Length = 1 then
+                        valueToJson objs.[0]
                     else
                         objs
                         |> Array.map valueToJson
@@ -57,30 +59,36 @@ type DynamicModule(name) =
             breathCount <- breathCount + 1)
         watcher
 
-    member this.BreathCount = breathCount
-    member this.Result = result
+    member this.BreathCount =
+        decimal breathCount
+        |> JsonValue.Number
+        |> Ok
+        |> valueToJson
 
     member this.FunctionList =
-        match result with
-        | Ok funcModule ->
+        result
+        |> Result.map (fun funcModule ->
             funcModule.GetMethods()
             |> Array.filter (fun m -> m.IsStatic)
             |> Array.map (fun m -> JsonValue.String m.Name)
-            |> JsonValue.Array
-        | Error e -> JsonValue.String e
+            |> JsonValue.Array)
+        |> valueToJson
+        |> fun x ->
+            printfn "FunctionList = %O" x
+            x
 
     member this.GetFuction funcName =
-        match result with
-        | Ok funcModule ->
+        result
+        |> Result.map (fun funcModule ->
             funcModule.GetMethod funcName
             |> Meta.ofMethod
-            |> Meta.funToJsonValue
-        | Error e -> JsonValue.String e
+            |> Meta.funToJsonValue)
+        |> valueToJson
 
     member this.InvokeFunction(funcName, args: JsonValue) =
         printfn "InvokeFunction (%s, %A)" funcName args
-        match result with
-        | Ok funcModule ->
+        result
+        |> Result.map (fun funcModule ->
             let method = funcModule.GetMethod funcName
             match args with
             | JsonValue.Array a ->
@@ -90,9 +98,26 @@ type DynamicModule(name) =
                     |> Array.zip a
                     |> Array.map (fun (json, param) -> Meta.deserialize param.Type json)
                 method.Invoke(Unchecked.defaultof<_>, args) |> valueToJson
-            | _ -> failwith "JSON is not array"
-        | Error e -> JsonValue.String e
+            | _ -> failwith "JSON is not array")
+        |> valueToJson
 
-    member this.GetUserCode() = File.ReadAllText path
+    member this.GetUserCode() =
+        try
+            File.ReadAllText path
+            |> JsonValue.String
+            |> Ok
+        with e ->
+            e.ToString()
+            |> JsonValue.String
+            |> Error
+        |> valueToJson
 
-    member this.UpdateUserCode userCode = File.WriteAllText(path, userCode)
+    member this.UpdateUserCode userCode =
+        try
+            File.WriteAllText(path, userCode)
+            Ok JsonValue.Null
+        with e ->
+            e.ToString()
+            |> JsonValue.String
+            |> Error
+        |> valueToJson

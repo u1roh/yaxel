@@ -1,13 +1,51 @@
 import * as yaxel from './yaxel'
 
-function postJson(input: RequestInfo, json: string): Promise<Response> {
-    return fetch(input, {
+export interface Ok<T> {
+    tag: "ok";
+    value: T;
+}
+export interface Err {
+    tag: "err";
+    value: any;
+}
+
+export type Result<T> = Ok<T> | Err;
+
+async function postJson<T>(input: RequestInfo, json: string): Promise<Result<T>> {
+    const res = await fetch(input, {
         method: 'POST',
         body: json,
         headers: {
             'Content-Type': 'application/json'
         }
     });
+    const text = await res.text();
+    const result = JSON.parse(text);
+    return result.name === "Ok" ? { tag: 'ok', value: result.value } : { tag: 'err', value: result.value }
+}
+
+async function get<T>(func: string): Promise<Result<T>> {
+    try {
+        const res = await fetch('api/' + func);
+        const text = await res.text();
+        console.log("get(" + func + "): text = " + text);
+        const json = JSON.parse(text);
+        return json.name === "Ok" ? { tag: 'ok', value: json.value } : { tag: 'err', value: json.value }
+    }
+    catch (e) {
+        console.log(e);
+        return { tag: 'err', value: e };
+    }
+}
+
+async function getOr<T>(func: string, defValue: T): Promise<T> {
+    const result = await get<T>(func);
+    if (result.tag === 'err') {
+        console.log("ERROR @ getOr(" + func + ", " + JSON.stringify(defValue) + ") > " + JSON.stringify(result.value));
+        return defValue;
+    } else {
+        return result.value;
+    }
 }
 
 async function fetchText(input: RequestInfo): Promise<string> {
@@ -20,39 +58,29 @@ async function fetchBy<T>(input: RequestInfo, map: (text: string) => T): Promise
     return map(text);
 }
 
-export async function fetchFunctionList(): Promise<string[]> {
-    return fetchBy('api/function', JSON.parse)
+export function fetchFunctionList(): Promise<string[]> {
+    return getOr<string[]>('function', []);
 }
 
-export async function fetchBreathCount(): Promise<number> {
-    const text = await fetchText('api/breath/');
-    return Number.parseInt(text);
+export function fetchBreathCount(): Promise<number> {
+    return getOr<number>('breath', -1);
 }
 
-export function fetchUserCode(): Promise<string> {
-    return fetchText('api/usercode/');
+export async function fetchUserCode(): Promise<string> {
+    const result = await get<string>('usercode');
+    return result.tag == 'ok' ? result.value : JSON.stringify(result.value);
 }
 
-export function updateUserCode(code: string): Promise<Response> {
+export function updateUserCode(code: string): Promise<Result<any>> {
     return postJson('api/update-usercode', code);
 }
 
-export async function invokeFunction(funcName: string, args: any[]): Promise<any> {
+export function invokeFunction(funcName: string, args: any[]): Promise<Result<any>> {
     console.log("api.invokeFunction(" + funcName + ", " + JSON.stringify(args) + ")");
-    const response = await postJson('api/invoke/' + funcName, JSON.stringify(args));
-    const txt = await response.text();
-    try {
-        return JSON.parse(txt);
-    }
-    catch (e) {
-        console.log("error @ Function#invoke()");
-        console.log(e);
-        console.log(txt);
-        return txt;
-    }
+    return postJson('api/invoke/' + funcName, JSON.stringify(args));
 }
 
-export function fetchFunction(funcName: string): Promise<yaxel.Fun> {
+export function fetchFunction(funcName: string): Promise<Result<yaxel.Fun>> {
     console.log("api.fetchFunction(" + funcName + ")")
-    return fetchBy('api/function/' + funcName, JSON.parse);
+    return get('function/' + funcName);
 }

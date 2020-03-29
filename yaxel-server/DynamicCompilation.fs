@@ -3,6 +3,7 @@ module Yaxel.DynamicCompilation
 open System.IO
 open Microsoft.FSharp.Reflection
 open FSharp.Compiler.SourceCodeServices
+open FSharp.Data
 
 let private scs = FSharpChecker.Create()
 
@@ -43,9 +44,8 @@ let fromSourceFile srcPath =
     printfn "errors = %A" errors
     let errorJson =
         errors
-        |> Array.map (sprintf "\"%O\"")
-        |> String.concat ","
-        |> sprintf "[%s]"
+        |> Array.map (sprintf "%O" >> JsonValue.String)
+        |> JsonValue.Array
     asm
     |> Option.iter (fun asm ->
         asm.GetTypes()

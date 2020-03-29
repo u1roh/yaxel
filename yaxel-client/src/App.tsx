@@ -15,6 +15,7 @@ class FuncList extends React.Component<{}, State> {
   }
   private async fetchFunctions() {
     const functions = await api.fetchFunctionList();
+    console.log("FuncList: functions = " + JSON.stringify(functions));
     this.setState({ functions: functions });
   }
   componentDidMount() {

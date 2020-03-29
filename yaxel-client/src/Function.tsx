@@ -58,11 +58,18 @@ class Function extends React.Component<FunctionProps, FunctionState> {
         }));
     }
     private async fetchFunction() {
+        console.log("Function: this.props.name = " + this.props.name);
         const fun = await api.fetchFunction(this.props.name);
-        const args = yaxel.defaultArgsOf(fun);
-        const result = await this.invoke(args);
-        const state: FunctionState = { func: fun, args: args, result: result };
-        this.setState(state);
+        if (fun.tag === 'ok') {
+            const args = yaxel.defaultArgsOf(fun.value);
+            const result = await this.invoke(args);
+            const state: FunctionState = { func: fun.value, args: args, result: result };
+            this.setState(state);
+        } else {
+            console.log(fun.value);
+            const state: FunctionState = { func: null, args: [], result: fun.value };
+            this.setState(state);
+        }
     }
     componentDidMount() {
         this.fetchFunction();

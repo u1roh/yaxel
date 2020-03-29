@@ -69,8 +69,8 @@ function App() {
   return (
     <div className="App">
       <div className="App-modules"><ModuleList /></div>
-      <div className="left"><FuncList /></div>
-      <div className="right"><CodeEditor /></div>
+      <div className="App-fuctions"><FuncList /></div>
+      <div className="App-editor"><CodeEditor /></div>
     </div>
   );
 }

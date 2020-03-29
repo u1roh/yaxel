@@ -14,15 +14,16 @@
 }
 
 .App-modules {
+  display: inline-block;
   margin: 1em
 }
 
-.left {
-  display: inline-block;
+.App-functions {
+  float: right;
   width: 50%;
 }
 
-.right {
+.App-editor {
   float: right;
   width: 50%;
 }

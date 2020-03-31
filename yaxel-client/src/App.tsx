@@ -1,68 +1,54 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import './App.css';
 import Function from './Function'
 import ModuleList from './ModuleList'
 import * as api from './api'
 
-interface State {
-  functions: string[]
-}
-
-class FuncList extends React.Component<{}, State> {
-  private breathCount: number = 0;
-  constructor(props: {}) {
-    super(props);
-    this.state = { functions: [] };
-  }
-  private async fetchFunctions() {
-    const functions = await api.fetchFunctionList();
-    console.log("FuncList: functions = " + JSON.stringify(functions));
-    this.setState({ functions: functions });
-  }
-  componentDidMount() {
-    setInterval(async () => {
+function FuncList() {
+  const [functions, setFunctions] = useState([] as string[]);
+  let breathCount = -1;
+  useEffect(() => {
+    const id = setInterval(async () => {
       const breath = await api.fetchBreathCount();
-      if (breath !== this.breathCount) {
+      if (breath !== breathCount) {
         console.log("breath = " + breath);
-        this.breathCount = breath;
-        this.fetchFunctions();
+        breathCount = breath;
+        api.fetchFunctionList().then(setFunctions);
       }
     }, 1000);
-    this.fetchFunctions();
-  }
-  render() {
-    return (
-      <div className="FuncList">
-        <h1>Functions</h1>
-        {this.state.functions.map(item => <Function name={item}></Function>)}
-      </div>
-    );
-  }
+    return () => clearInterval(id);
+  });
+  return (
+    <div className="FuncList">
+      <h1>Functions</h1>
+      {functions.map(item => <Function name={item}></Function>)}
+    </div>
+  );
+
 }
 
-class CodeEditor extends React.Component<{}, { code: string }> {
-  constructor(props: {}) {
-    super(props);
-    this.state = { code: "" };
-  }
-  componentDidMount() {
-    api.fetchUserCode()
-      .then(text => this.setState({ code: text }));
-  }
-  private onKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+function CodeEditor() {
+  const [isInitial, setIsInitial] = useState(true);
+  const [code, setCode] = useState("");
+  useEffect(() => {
+    if (isInitial) {
+      setIsInitial(false);
+      api.fetchUserCode()
+        .then(text => setCode(text));
+    }
+  });
+  const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       console.log("Ctrl + S");
-      api.updateUserCode(this.state.code);
+      api.updateUserCode(code);
     }
-  }
-  render() {
-    return <textarea
-      className="CodeEditor"
-      value={this.state.code}
-      onChange={e => this.setState({ code: e.target.value })}
-      onKeyDown={e => this.onKeyDown(e)}></textarea>
-  }
+  };
+  return <textarea
+    className="CodeEditor"
+    value={code}
+    onChange={e => setCode(e.target.value)}
+    onKeyDown={e => onKeyDown(e)}></textarea>
 }
 
 function App() {

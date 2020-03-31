@@ -88,3 +88,12 @@ export function fetchFunction(funcName: string): Promise<Result<yaxel.Fun>> {
     console.log("api.fetchFunction(" + funcName + ")")
     return get('function/' + funcName);
 }
+
+export async function fetchModuleFunctions(modName: string): Promise<Result<yaxel.Fun>[]> {
+    const names = await fetchFunctionList();
+    const funcs = new Array<Result<yaxel.Fun>>(names.length);
+    for (let i = 0; i < names.length; ++i) {
+        funcs[i] = await fetchFunction(names[i]);
+    }
+    return funcs;
+}

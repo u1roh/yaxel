@@ -3,40 +3,38 @@ import './App.css';
 import Function from './Function'
 import ModuleList from './ModuleList'
 import * as api from './api'
+import * as yaxel from './yaxel'
 
-function FuncList() {
-  const [functions, setFunctions] = useState([] as string[]);
+function Module(props: { name: string }) {
   let breathCount = -1;
+  const [functions, setFunctions] = useState([] as api.Result<yaxel.Fun>[]);
   useEffect(() => {
     const id = setInterval(async () => {
       const breath = await api.fetchBreathCount();
       if (breath !== breathCount) {
         console.log("breath = " + breath);
         breathCount = breath;
-        api.fetchFunctionList().then(setFunctions);
+        api.fetchModuleFunctions("Sample").then(setFunctions);
       }
     }, 1000);
     return () => clearInterval(id);
-  });
+  }, [functions]);
   return (
-    <div className="FuncList">
+    <div className="Module">
       <h1>Functions</h1>
-      {functions.map(item => <Function name={item}></Function>)}
+      {functions.map(item =>
+        item.tag == 'ok' ? <Function func={item.value}></Function> : <div>{JSON.stringify(item.value)}</div>
+      )}
     </div>
   );
-
 }
 
 function CodeEditor() {
-  const [isInitial, setIsInitial] = useState(true);
   const [code, setCode] = useState("");
   useEffect(() => {
-    if (isInitial) {
-      setIsInitial(false);
-      api.fetchUserCode()
-        .then(text => setCode(text));
-    }
-  });
+    api.fetchUserCode()
+      .then(text => setCode(text));
+  }, []); // 空の配列 [] を指定しておくと最初の一回だけこれが呼ばれる
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
@@ -55,7 +53,7 @@ function App() {
   return (
     <div className="App">
       <div className="App-modules"><ModuleList /></div>
-      <div className="App-fuctions"><FuncList /></div>
+      <div className="App-fuctions"><Module name="Sample" /></div>
       <div className="App-editor"><CodeEditor /></div>
     </div>
   );

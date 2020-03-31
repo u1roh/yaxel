@@ -114,6 +114,7 @@ type DynamicModule(name) =
         try
             File.WriteAllText(path, userCode)
             result <- build()
+            breathCount <- breathCount + 1
             result |> Result.map ignore
         with e ->
             e.ToString()

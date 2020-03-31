@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import TypedInput from './TypedInput'
 import * as yaxel from './yaxel'
 import * as api from './api'
@@ -32,74 +32,28 @@ class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
     }
 }
 
-interface FunctionProps {
-    name: string
-}
-
-interface FunctionState {
-    func: yaxel.Fun | null;
-    args: any[];
-    result: any;
-}
-
-class Function extends React.Component<FunctionProps, FunctionState> {
-    private breathCount: number = 0;
-    constructor(props: FunctionProps) {
-        super(props);
-        this.state = { func: null, args: new Array<any>(0), result: null };
+function Function(props: { func: yaxel.Fun }) {
+    const [args, setArgs] = useState(yaxel.defaultArgsOf(props.func));
+    const [result, setResult] = useState(null as any);
+    const updateArgs = async (args: any[]) => {
+        setArgs(args);
+        setResult(await api.invokeFunction(props.func.name, args));
     }
-    private invoke(args: any[]): Promise<any> {
-        return api.invokeFunction(this.props.name, args)
-    }
-    private updateArgs(args: any[]) {
-        this.invoke(args).then(result => this.setState({
-            func: this.state.func,
-            result: result
-        }));
-    }
-    private async fetchFunction() {
-        console.log("Function: this.props.name = " + this.props.name);
-        const fun = await api.fetchFunction(this.props.name);
-        if (fun.tag === 'ok') {
-            const args = yaxel.defaultArgsOf(fun.value);
-            const result = await this.invoke(args);
-            const state: FunctionState = { func: fun.value, args: args, result: result };
-            this.setState(state);
-        } else {
-            console.log(fun.value);
-            const state: FunctionState = { func: null, args: [], result: fun.value };
-            this.setState(state);
-        }
-    }
-    componentDidMount() {
-        this.fetchFunction();
-    }
-    async componentWillUpdate() {
-        const breath = await api.fetchBreathCount();
-        if (breath !== this.breathCount) {
-            console.log("breath = " + breath);
-            this.breathCount = breath;
-            this.fetchFunction();
-        }
-    }
-    render() {
-        return (
-            <div className="Function">
-                <hr></hr>
-                <h2>'<span className="Function-name">{this.state.func?.name}</span>' function</h2>
-                <h3>params</h3>
-                {
-                    this.state.func === null ? <span></span> :
-                        <FunArgsInput
-                            params={this.state.func.params}
-                            args={yaxel.defaultArgsOf(this.state.func)}
-                            onSubmit={x => this.updateArgs(x)}></FunArgsInput>
-                }
-                <h3>return</h3>
-                <p>{JSON.stringify(this.state.result)}</p>
-            </div>
-        );
-    }
+    return (
+        <div className="Function">
+            <hr></hr>
+            <h2>'<span className="Function-name">{props.func.name}</span>' function</h2>
+            <h3>params</h3>
+            {
+                <FunArgsInput
+                    params={props.func.params}
+                    args={args}
+                    onSubmit={updateArgs}></FunArgsInput>
+            }
+            <h3>return</h3>
+            <p>{JSON.stringify(result)}</p>
+        </div>
+    );
 }
 
 export default Function;

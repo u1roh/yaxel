@@ -53,6 +53,7 @@ type private ServiceApi() =
         |> valueToJson
 
     member this.UpdateUserCode(modName, userCode) =
+        printfn "UpdateUserCode(%s, %s)" modName userCode
         getModule modName
         |> Result.bind (fun m -> m.UpdateUserCode userCode)
         |> valueToJson
@@ -71,6 +72,7 @@ type Server() =
 
         if path.StartsWith "api/" then
             let pathes = path.Split([| '/' |], StringSplitOptions.RemoveEmptyEntries)
+            if pathes.[1] <> "breath" then printfn "OnRequest: path = %s" path
             use writer = new StreamWriter(out)
             match pathes.[1..] with
             | [| "modules" |] -> api.GetModuleList()

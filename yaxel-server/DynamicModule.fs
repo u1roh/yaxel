@@ -57,6 +57,9 @@ type DynamicModule(name) =
             new FileSystemWatcher(Path = dirPath, Filter = "*.fs", NotifyFilter = NotifyFilters.LastWrite,
                                   EnableRaisingEvents = true)
         watcher.Changed
+        |> Observable.map (fun e ->
+            printfn "watcher.Changed: e.Name = %s" e.Name
+            e)
         |> Observable.filter (fun e -> e.Name = name + ".fs")
         |> Observable.subscribe (fun _ ->
             printfn "building..."
@@ -110,7 +113,8 @@ type DynamicModule(name) =
     member this.UpdateUserCode userCode =
         try
             File.WriteAllText(path, userCode)
-            Ok JsonValue.Null
+            result <- build()
+            result |> Result.map ignore
         with e ->
             e.ToString()
             |> JsonValue.String

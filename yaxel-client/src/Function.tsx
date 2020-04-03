@@ -3,33 +3,23 @@ import TypedInput from './TypedInput'
 import * as yaxel from './yaxel'
 import * as api from './api'
 
-interface FunArgInputProps {
+interface FunArgsInputProps {
     params: yaxel.TypedItem[];
     args: any[];
     onSubmit: ((args: any[]) => void);
 }
 
-class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
-    constructor(props: FunArgInputProps) {
-        super(props);
-        console.log("FunArgsInput constructor");
-        this.state = { args: props.args };
-    }
-    private update(args: any[]) {
-        this.setState({ args: args });
-        this.props.onSubmit(this.state.args);
-    }
-    private onChange(i: number, x: any) {
+function FunArgsInput(props: FunArgsInputProps) {
+    const [args, setArgs] = useState(props.args);
+    const onChange = (i: number, x: any) => {
         console.log("FunArgsInput#inChange(" + i + ", " + JSON.stringify(x) + ")");
-        const args = this.state.args;
         args[i] = x;
-        this.update(args);
+        setArgs(args);
+        props.onSubmit(args);
     }
-    render() {
-        return (<form>
-            {this.props.params?.map((p, i) => <TypedInput name={p.name} type={p.type} value={this.state.args[i]} onChange={(x) => this.onChange(i, x)} />)}
-        </form>);
-    }
+    return (<form>
+        {props.params?.map((p, i) => <TypedInput name={p.name} type={p.type} value={args[i]} onChange={(x) => onChange(i, x)} />)}
+    </form>);
 }
 
 function Function(props: { module: string, func: yaxel.Fun }) {

@@ -15,17 +15,17 @@
 
 .App-modules {
   display: inline-block;
-  margin: 1em
+  width: 20%;
 }
 
 .App-functions {
   float: right;
-  width: 50%;
+  width: 40%;
 }
 
 .App-editor {
   float: right;
-  width: 50%;
+  width: 40%;
 }
 
 .CodeEditor {

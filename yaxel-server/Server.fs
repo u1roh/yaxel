@@ -7,6 +7,13 @@ open FSharp.Data
 
 type private ServiceApi() =
 
+    let watcher =
+        let watcher =
+            new FileSystemWatcher(Path = DynamicModule.SourceDirectory, Filter = "*.fs",
+                                  NotifyFilter = (NotifyFilters.CreationTime ||| NotifyFilters.FileName),
+                                  EnableRaisingEvents = true)
+        watcher.Changed |> Observable.subscribe (fun _ -> printfn "ServiceApi.watcher.Changed")
+
     let userModules =
         Directory.GetFiles DynamicModule.SourceDirectory
         |> Array.map (Path.GetFileNameWithoutExtension >> fun name -> name, DynamicModule name)
@@ -21,7 +28,7 @@ type private ServiceApi() =
             |> JsonValue.String
             |> Error
 
-    member this.GetBreathCount modName =
+    member this.GetModuleBreathCount modName =
         getModule modName
         |> Result.bind (fun m -> m.BreathCount)
         |> valueToJson
@@ -37,7 +44,7 @@ type private ServiceApi() =
         |> Result.bind (fun m -> m.FunctionList)
         |> valueToJson
 
-    member this.GetFuction(modName, funcName) =
+    member this.GetFunction(modName, funcName) =
         getModule modName
         |> Result.bind (fun m -> m.GetFuction funcName)
         |> valueToJson
@@ -76,19 +83,23 @@ type Server() =
             use writer = new StreamWriter(out)
             match pathes.[1..] with
             | [| "modules" |] -> api.GetModuleList()
-            | [| "breath" |] -> api.GetBreathCount "Sample"
-            | [| "function" |] -> api.GetFunctionList "Sample"
-            | [| "function"; funcName |] -> api.GetFuction("Sample", funcName)
-            | [| "invoke"; funcName |] ->
+            | [| "modules"; "breath" |] ->
+                JsonValue.Number(decimal 0)
+                |> Ok
+                |> valueToJson
+            | [| "modules"; modName; "breath" |] -> api.GetModuleBreathCount modName
+            | [| "modules"; modName; "functions" |] -> api.GetFunctionList modName
+            | [| "modules"; modName; "functions"; funcName |] -> api.GetFunction(modName, funcName)
+            | [| "modules"; modName; "functions"; funcName; "invoke" |] ->
                 use reader = new StreamReader(con.Request.InputStream)
                 let args = reader.ReadToEnd()
                 printfn "invoke: func = %s, args = %s" funcName args
                 let json = JsonValue.Parse args
-                api.InvokeFunction("Sample", funcName, json)
-            | [| "usercode" |] -> api.GetUserCode "Sample"
-            | [| "update-usercode" |] ->
+                api.InvokeFunction(modName, funcName, json)
+            | [| "modules"; modName; "usercode" |] -> api.GetUserCode modName
+            | [| "modules"; modName; "usercode"; "update" |] ->
                 use reader = new StreamReader(con.Request.InputStream)
-                api.UpdateUserCode("Sample", reader.ReadToEnd())
+                api.UpdateUserCode(modName, reader.ReadToEnd())
             | _ -> sprintf "unknown API: pathes = %A" pathes |> FSharp.Data.JsonValue.String
             |> writer.Write
         else

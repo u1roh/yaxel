@@ -10,35 +10,35 @@ function Module(props: { name: string }) {
   const [breath, setBreath] = useState(-1);
   useEffect(() => {
     const id = setInterval(async () => {
-      const serverBreath = await api.fetchBreathCount();
+      const serverBreath = await api.fetchModuleBreathCount(props.name);
       if (serverBreath !== breath) {
         setBreath(serverBreath);
         api.fetchModuleFunctions(props.name).then(setFunctions);
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [functions]);
+  }, [breath, functions]);
   return (
     <div className="Module">
       <h1>Functions</h1>
       {functions.map(item =>
-        item.tag == 'ok' ? <Function func={item.value}></Function> : <div>{JSON.stringify(item.value)}</div>
+        item.tag === 'ok' ? <Function module={props.name} func={item.value}></Function> : <div>{JSON.stringify(item.value)}</div>
       )}
     </div>
   );
 }
 
-function CodeEditor() {
+function CodeEditor(props: { name: string }) {
   const [code, setCode] = useState("");
   useEffect(() => {
-    api.fetchUserCode()
+    api.fetchUserCode(props.name)
       .then(text => setCode(text));
-  }, []); // 空の配列 [] を指定しておくと最初の一回だけこれが呼ばれる
+  }, [props.name]);
   const onKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.ctrlKey && e.key === 's') {
       e.preventDefault();
       console.log("Ctrl + S");
-      api.updateUserCode(code);
+      api.updateUserCode(props.name, code);
     }
   };
   return <textarea
@@ -53,7 +53,7 @@ function App() {
     <div className="App">
       <div className="App-modules"><ModuleList /></div>
       <div className="App-fuctions"><Module name="Sample" /></div>
-      <div className="App-editor"><CodeEditor /></div>
+      <div className="App-editor"><CodeEditor name="Sample" /></div>
     </div>
   );
 }

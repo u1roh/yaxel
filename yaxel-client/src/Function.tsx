@@ -32,12 +32,12 @@ class FunArgsInput extends React.Component<FunArgInputProps, { args: any[] }> {
     }
 }
 
-function Function(props: { func: yaxel.Fun }) {
+function Function(props: { module: string, func: yaxel.Fun }) {
     const [args, setArgs] = useState(yaxel.defaultArgsOf(props.func));
     const [result, setResult] = useState(null as any);
     const updateArgs = async (args: any[]) => {
         setArgs(args);
-        setResult(await api.invokeFunction(props.func.name, args));
+        setResult(await api.invokeFunction(props.module, props.func.name, args));
     }
     return (
         <div className="Function">

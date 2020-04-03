@@ -1,6 +1,5 @@
 import React from 'react';
 import './App.css';
-import Function from './Function'
 import * as api from './api'
 
 interface State {

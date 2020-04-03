@@ -62,38 +62,42 @@ export function fetchModuleList(): Promise<string[]> {
     return getOr<string[]>('modules', []);
 }
 
-export function fetchFunctionList(): Promise<string[]> {
-    return getOr<string[]>('function', []);
+export function fetchFunctionList(modName: string): Promise<string[]> {
+    return getOr<string[]>('modules/' + modName + '/functions', []);
 }
 
 export function fetchBreathCount(): Promise<number> {
-    return getOr<number>('breath', -1);
+    return getOr<number>('modules/breath', -1);
 }
 
-export async function fetchUserCode(): Promise<string> {
-    const result = await get<string>('usercode');
-    return result.tag == 'ok' ? result.value : JSON.stringify(result.value);
+export function fetchModuleBreathCount(modName: string): Promise<number> {
+    return getOr<number>('modules/' + modName + '/breath', -1);
 }
 
-export function updateUserCode(code: string): Promise<Result<any>> {
-    return postJson('api/update-usercode', code);
+export async function fetchUserCode(modName: string): Promise<string> {
+    const result = await get<string>('modules/' + modName + '/usercode');
+    return result.tag === 'ok' ? result.value : JSON.stringify(result.value);
 }
 
-export function invokeFunction(funcName: string, args: any[]): Promise<Result<any>> {
+export function updateUserCode(modName: string, code: string): Promise<Result<any>> {
+    return postJson('api/modules/' + modName + '/usercode/update', code);
+}
+
+export function invokeFunction(modName: string, funcName: string, args: any[]): Promise<Result<any>> {
     console.log("api.invokeFunction(" + funcName + ", " + JSON.stringify(args) + ")");
-    return postJson('api/invoke/' + funcName, JSON.stringify(args));
+    return postJson('api/modules/' + modName + '/functions/' + funcName + '/invoke', JSON.stringify(args));
 }
 
-export function fetchFunction(funcName: string): Promise<Result<yaxel.Fun>> {
-    console.log("api.fetchFunction(" + funcName + ")")
-    return get('function/' + funcName);
+export function fetchFunction(modName: string, funcName: string): Promise<Result<yaxel.Fun>> {
+    console.log("api.fetchFunction(" + modName + ", " + funcName + ")")
+    return get('modules/' + modName + '/functions/' + funcName);
 }
 
 export async function fetchModuleFunctions(modName: string): Promise<Result<yaxel.Fun>[]> {
-    const names = await fetchFunctionList();
+    const names = await fetchFunctionList(modName);
     const funcs = new Array<Result<yaxel.Fun>>(names.length);
     for (let i = 0; i < names.length; ++i) {
-        funcs[i] = await fetchFunction(names[i]);
+        funcs[i] = await fetchFunction(modName, names[i]);
     }
     return funcs;
 }

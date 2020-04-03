@@ -6,15 +6,14 @@ import * as api from './api'
 import * as yaxel from './yaxel'
 
 function Module(props: { name: string }) {
-  let breathCount = -1;
   const [functions, setFunctions] = useState([] as api.Result<yaxel.Fun>[]);
+  const [breath, setBreath] = useState(-1);
   useEffect(() => {
     const id = setInterval(async () => {
-      const breath = await api.fetchBreathCount();
-      if (breath !== breathCount) {
-        console.log("breath = " + breath);
-        breathCount = breath;
-        api.fetchModuleFunctions("Sample").then(setFunctions);
+      const serverBreath = await api.fetchBreathCount();
+      if (serverBreath !== breath) {
+        setBreath(serverBreath);
+        api.fetchModuleFunctions(props.name).then(setFunctions);
       }
     }, 1000);
     return () => clearInterval(id);

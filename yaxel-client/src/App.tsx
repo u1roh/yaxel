@@ -27,7 +27,7 @@ function Module(props: { name: string }) {
   }, [functions]);
   return (
     <div className="Module">
-      <h1>Functions</h1>
+      <h2>Functions</h2>
       {functions.tag === 'err' ? <div>ERROR: {JSON.stringify(functions.value)}</div> :
         functions.value.map(item => <Function module={props.name} func={item}></Function>)}
     </div>
@@ -38,7 +38,7 @@ function ModuleList(props: { modules: string[], onSelectedIndexChanged: (index: 
   const [selectedIndex, setSelectedIndex] = useState(0);
   return (
     <div className="ModuleList">
-      <h1>Modules</h1>
+      <h2>Modules</h2>
       <ul>
         {props.modules.map((item, index) =>
           <li className={index === selectedIndex ? "ItemSelected" : "ItemDeselected"}
@@ -90,9 +90,12 @@ function App() {
   }, [breath, modules, selectedModuleIndex]);
   return (
     <div className="App">
-      <div className="App-modules"><ModuleList modules={modules} onSelectedIndexChanged={setSelectedModuleIndex} /></div>
-      <div className="App-fuctions"><Module name={modules[selectedModuleIndex]} /></div>
-      <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
+      <h1>F# Cloud Run</h1>
+      <div className="App-container">
+        <div className="App-modules"><ModuleList modules={modules} onSelectedIndexChanged={setSelectedModuleIndex} /></div>
+        <div className="App-functions"><Module name={modules[selectedModuleIndex]} /></div>
+        <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
+      </div>
     </div>
   );
 }

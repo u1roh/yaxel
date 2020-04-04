@@ -9,22 +9,23 @@
   font-size: calc(10px + 2vmin);
   */
   color: white;
-  display: flex;
   height: 100%;
 }
 
+.App-container {
+  display: flex;
+  justify-content: center;
+}
+
 .App-modules {
-  display: inline-block;
   width: 20%;
 }
 
 .App-functions {
-  float: right;
   width: 40%;
 }
 
 .App-editor {
-  float: right;
   width: 40%;
 }
 

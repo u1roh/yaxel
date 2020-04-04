@@ -28,7 +28,7 @@ async function get<T>(func: string): Promise<Result<T>> {
     try {
         const res = await fetch('api/' + func);
         const text = await res.text();
-        console.log("get(" + func + "): text = " + text);
+        //console.log("get(" + func + "): text = " + text);
         const json = JSON.parse(text);
         return json.name === "Ok" ? { tag: 'ok', value: json.value } : { tag: 'err', value: json.value }
     }
@@ -41,7 +41,7 @@ async function get<T>(func: string): Promise<Result<T>> {
 async function getOr<T>(func: string, defValue: T): Promise<T> {
     const result = await get<T>(func);
     if (result.tag === 'err') {
-        console.log("ERROR @ getOr(" + func + ", " + JSON.stringify(defValue) + ") > " + JSON.stringify(result.value));
+        //console.log("ERROR @ getOr(" + func + ", " + JSON.stringify(defValue) + ") > " + JSON.stringify(result.value));
         return defValue;
     } else {
         return result.value;

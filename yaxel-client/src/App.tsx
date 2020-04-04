@@ -8,6 +8,11 @@ function Module(props: { name: string }) {
   const [functions, setFunctions] = useState([] as api.Result<yaxel.Fun>[]);
   const [breath, setBreath] = useState(-1);
   useEffect(() => {
+    console.log("Module: props.name = " + props.name);
+    api.fetchModuleFunctions(props.name).then(setFunctions);
+    setBreath(-1);
+  }, [props.name]);
+  useEffect(() => {
     const id = setInterval(async () => {
       const serverBreath = await api.fetchModuleBreathCount(props.name);
       if (serverBreath !== breath) {
@@ -27,12 +32,16 @@ function Module(props: { name: string }) {
   );
 }
 
-function ModuleList(props: { modules: string[] }) {
+function ModuleList(props: { modules: string[], onSelectedIndexChanged: (index: number) => void }) {
+  const [selectedIndex, setSelectedIndex] = useState(0);
   return (
     <div className="ModuleList">
       <h1>Modules</h1>
       <ul>
-        {props.modules.map(item => <li>{item}</li>)}
+        {props.modules.map((item, index) =>
+          <li className={index === selectedIndex ? "ItemSelected" : "ItemDeselected"}
+            onClick={_ => { setSelectedIndex(index); props.onSelectedIndexChanged(index); console.log("onClick: index = " + index); }}>{item}</li>
+        )}
       </ul>
     </div>
   );
@@ -41,6 +50,7 @@ function ModuleList(props: { modules: string[] }) {
 function CodeEditor(props: { name: string }) {
   const [code, setCode] = useState("");
   useEffect(() => {
+    console.log("CodeEditor: props.name = " + props.name);
     api.fetchUserCode(props.name)
       .then(text => setCode(text));
   }, [props.name]);
@@ -61,6 +71,11 @@ function CodeEditor(props: { name: string }) {
 function App() {
   const [modules, setModules] = useState([] as string[]);
   const [breath, setBreath] = useState(-1);
+  const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
+  useEffect(() => {
+    console.log("App: modules = " + JSON.stringify(modules));
+    api.fetchModuleList().then(setModules);
+  }, []);
   useEffect(() => {
     const id = setInterval(async () => {
       const serverBreath = await api.fetchBreathCount();
@@ -70,12 +85,12 @@ function App() {
       }
     }, 1000);
     return () => clearInterval(id);
-  }, [breath, modules]);
+  }, [breath, modules, selectedModuleIndex]);
   return (
     <div className="App">
-      <div className="App-modules"><ModuleList modules={modules} /></div>
-      <div className="App-fuctions"><Module name="Sample" /></div>
-      <div className="App-editor"><CodeEditor name="Sample" /></div>
+      <div className="App-modules"><ModuleList modules={modules} onSelectedIndexChanged={setSelectedModuleIndex} /></div>
+      <div className="App-fuctions"><Module name={modules[selectedModuleIndex]} /></div>
+      <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
     </div>
   );
 }

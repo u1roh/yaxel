@@ -33,3 +33,12 @@
   height: 90%;
   margin: 1em;
 }
+
+.ItemSelected {
+  cursor: pointer;
+}
+
+.ItemDeselected {
+  color: gray;
+  cursor: pointer;
+}

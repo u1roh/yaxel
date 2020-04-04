@@ -88,9 +88,14 @@ function TypedInput(props: TypedInputProps) {
                         };
                         return (<div>
                             <div>{caption}{props.type.name}</div>
-                            {props.type.fields.map(item =>
-                                <div><TypedInput name={item.name} type={item.type} value={props.value[item.name]} onChange={(x) => onFieldChange(item.name, x)} /></div>
-                            )}
+                            {props.type.fields.map(item => {
+                                try {
+                                    return <div><TypedInput name={item.name} type={item.type} value={props.value[item.name]} onChange={(x) => onFieldChange(item.name, x)} /></div>;
+                                }
+                                catch (e) {
+                                    return <div>{JSON.stringify(e)}</div>;
+                                }
+                            })}
                         </div>);
                     case 'union':
                         return <div>{caption}<UnionInput union={props.type} value={props.value} onChange={x => onChange(x)} /></div>;

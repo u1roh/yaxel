@@ -26,7 +26,7 @@ function FunArgsInput(props: FunArgsInputProps) {
 }
 
 function Function(props: { module: string, func: yaxel.Fun }) {
-    const [args, setArgs] = useState([] as any[]);
+    const [args, setArgs] = useState(yaxel.defaultArgsOf(props.func));
     const [result, setResult] = useState(null as any);
     const updateArgs = async (args: any[]) => {
         setArgs(args);

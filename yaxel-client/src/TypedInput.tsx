@@ -8,35 +8,36 @@ interface UnionInputProps {
     onChange: (value: any) => void;
 }
 
-class UnionInput extends React.Component<UnionInputProps> {
-    private selectedIndex = 0;
-    private setSelectedIndex(i: number) {
-        this.props.onChange({
-            name: this.props.union.cases[i].name,
-            value: yaxel.defaultValueOf(this.props.union.cases[i].type)
+function UnionInput(props: UnionInputProps) {
+    const setSelectedIndex = (i: number) => {
+        props.onChange({
+            name: props.union.cases[i].name,
+            value: yaxel.defaultValueOf(props.union.cases[i].type)
         });
     }
-    render() {
-        return (<div>
-            <select onChange={(e) => this.setSelectedIndex(e.target.selectedIndex)} value={this.props.value["name"]}>
-                {this.props.union.cases.map(item =>
-                    <option value={item.name}>{item.name}</option>)}
-            </select>
-            {
-                (() => {
-                    const item = this.props.union.cases.find(item => item.name === this.props.value["name"]);
+    return (<div>
+        <select onChange={(e) => setSelectedIndex(e.target.selectedIndex)} value={props.value ? props.value["name"] : "(undefined)"}>
+            {props.union.cases.map(item =>
+                <option value={item.name}>{item.name}</option>)}
+        </select>
+        {
+            (() => {
+                if (props.value) {
+                    const item = props.union.cases.find(item => item.name === props.value["name"]);
                     return item !== undefined ?
-                        <TypedInput name='' type={item.type} value={this.props.value["value"]}
+                        <TypedInput name='' type={item.type} value={props.value["value"]}
                             onChange={x => {
-                                const obj = this.props.value;
+                                const obj = props.value;
                                 obj.value = x;
-                                this.props.onChange(obj);
+                                props.onChange(obj);
                             }} />
                         : <span></span>;
-                })()
-            }
-        </div>);
-    }
+                } else {
+                    return <span></span>;
+                }
+            })()
+        }
+    </div>);
 }
 
 interface TypedInputProps {
@@ -46,64 +47,59 @@ interface TypedInputProps {
     onChange: (value: any) => void;
 }
 
-class TypedInput extends React.Component<TypedInputProps> {
-    private caption() {
-        return this.props.name.length === 0 ? "" : this.props.name + " = ";
-    }
-    private onChange(x: any) {
+function TypedInput(props: TypedInputProps) {
+    const caption = props.name.length === 0 ? "" : props.name + " = ";
+    const onChange = (x: any) => {
         console.log("TypedInput#onChange: " + x);
-        this.props.onChange(x);
-        this.setState({ value: x });
-    }
-    private renderInternal() {
-        switch (this.props.type) {
+        props.onChange(x);
+    };
+    const render = () => {
+        switch (props.type) {
             case null:
                 return <span></span>;
             case "int":
-                return <span>{this.caption()}
-                    <input value={this.props.value} onChange={(e) => this.onChange(Number.parseInt(e.target.value))}></input>
+                return <span>{caption}
+                    <input value={props.value} onChange={(e) => onChange(Number.parseInt(e.target.value))}></input>
                 </span>;
             case "float":
-                return <span>{this.caption()}
-                    <input value={this.props.value} onChange={(e) => this.onChange(Number.parseFloat(e.target.value))}></input>
+                return <span>{caption}
+                    <input value={props.value} onChange={(e) => onChange(Number.parseFloat(e.target.value))}></input>
                 </span>;
             case "string":
-                return <span>{this.caption()}
-                    <input value={this.props.value} onChange={(e) => this.onChange(e.target.value)}></input>
+                return <span>{caption}
+                    <input value={props.value} onChange={(e) => onChange(e.target.value)}></input>
                 </span>;
             case "bool":
                 return <span>
-                    <input type='checkbox' checked={this.props.value} onChange={(e) => this.onChange(e.target.checked)}></input>
-                    <label>{this.props.name}</label>
+                    <input type='checkbox' checked={props.value} onChange={(e) => onChange(e.target.checked)}></input>
+                    <label>{props.name}</label>
                 </span>;
             default:
-                if (Array.isArray(this.props.type)) {
-                    return JSON.stringify(this.props.type);
+                if (Array.isArray(props.type)) {
+                    return JSON.stringify(props.type);
                 }
-                switch (this.props.type.tag) {
+                switch (props.type.tag) {
                     case 'record':
-                        const onChange = (name: string, value: any) => {
+                        const onFieldChange = (name: string, value: any) => {
                             console.log("record / onChange: name = " + name + ", value = " + JSON.stringify(value));
-                            const record = this.props.value;
+                            const record = props.value;
                             record[name] = value;
-                            this.onChange(record);
+                            onChange(record);
                         };
                         return (<div>
-                            <div>{this.caption()}{this.props.type.name}</div>
-                            {this.props.type.fields.map(item =>
-                                <div><TypedInput name={item.name} type={item.type} value={this.props.value[item.name]} onChange={(x) => onChange(item.name, x)} /></div>
+                            <div>{caption}{props.type.name}</div>
+                            {props.type.fields.map(item =>
+                                <div><TypedInput name={item.name} type={item.type} value={props.value[item.name]} onChange={(x) => onFieldChange(item.name, x)} /></div>
                             )}
                         </div>);
                     case 'union':
-                        return <div>{this.caption()}<UnionInput union={this.props.type} value={this.props.value} onChange={x => this.onChange(x)} /></div>;
+                        return <div>{caption}<UnionInput union={props.type} value={props.value} onChange={x => onChange(x)} /></div>;
                     default:
-                        return JSON.stringify(this.props.type);
+                        return JSON.stringify(props.type);
                 }
         }
-    }
-    render() {
-        return <div className="TypedInput">{this.renderInternal()}</div>;
-    }
+    };
+    return <div className="TypedInput">{render()}</div>;
 }
 
 export default TypedInput;

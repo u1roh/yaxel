@@ -108,6 +108,13 @@ type Server() =
                     (basePath,
                      (if path = "" then "index.html" else path))
             if IO.File.Exists path then
+                match Path.GetExtension path with
+                | ".svg" -> Some "image/svg+xml"
+                | ".css" -> Some "text/css"
+                | ".html" -> Some "text/html"
+                | ".js" -> Some "text/javascript"
+                | _ -> None
+                |> Option.iter (fun ct -> con.Response.ContentType <- ct)
                 let content = IO.File.ReadAllBytes path
                 out.Write(content, 0, content.Length)
             else

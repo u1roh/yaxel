@@ -62,8 +62,9 @@ export function fetchModuleList(): Promise<string[]> {
     return getOr<string[]>('modules', []);
 }
 
-export function fetchFunctionList(modName: string): Promise<string[]> {
-    return getOr<string[]>('modules/' + modName + '/functions', []);
+export function fetchFunctionList(modName: string): Promise<Result<string[]>> {
+    return get<string[]>('modules/' + modName + '/functions');
+    //return getOr<string[]>('modules/' + modName + '/functions', []);
 }
 
 export function fetchBreathCount(): Promise<number> {
@@ -93,11 +94,15 @@ export function fetchFunction(modName: string, funcName: string): Promise<Result
     return get('modules/' + modName + '/functions/' + funcName);
 }
 
-export async function fetchModuleFunctions(modName: string): Promise<Result<yaxel.Fun>[]> {
+export async function fetchModuleFunctions(modName: string): Promise<Result<yaxel.Fun[]>> {
     const names = await fetchFunctionList(modName);
-    const funcs = new Array<Result<yaxel.Fun>>(names.length);
-    for (let i = 0; i < names.length; ++i) {
-        funcs[i] = await fetchFunction(modName, names[i]);
+    if (names.tag === 'err') return names;
+    const funcs = new Array<yaxel.Fun>(names.value.length);
+    for (let i = 0; i < names.value.length; ++i) {
+        const f = await fetchFunction(modName, names.value[i]);
+        if (f.tag === 'err') return f;
+        funcs[i] = f.value;
     }
-    return funcs;
+    console.log(funcs);
+    return { tag: 'ok', value: funcs };
 }

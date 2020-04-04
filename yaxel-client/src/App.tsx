@@ -5,7 +5,7 @@ import * as api from './api'
 import * as yaxel from './yaxel'
 
 function Module(props: { name: string }) {
-  const [functions, setFunctions] = useState([] as api.Result<yaxel.Fun>[]);
+  const [functions, setFunctions] = useState({ tag: 'err', value: 'not initialized' } as api.Result<yaxel.Fun[]>);
   const [breath, setBreath] = useState(-1);
   useEffect(() => {
     console.log("Module: props.name = " + props.name);
@@ -22,12 +22,14 @@ function Module(props: { name: string }) {
     }, 1000);
     return () => clearInterval(id);
   }, [breath, functions]);
+  useEffect(() => {
+    console.log(functions);
+  }, [functions]);
   return (
     <div className="Module">
       <h1>Functions</h1>
-      {functions.map(item =>
-        item.tag === 'ok' ? <Function module={props.name} func={item.value}></Function> : <div>{JSON.stringify(item.value)}</div>
-      )}
+      {functions.tag === 'err' ? <div>ERROR: {JSON.stringify(functions.value)}</div> :
+        functions.value.map(item => <Function module={props.name} func={item}></Function>)}
     </div>
   );
 }

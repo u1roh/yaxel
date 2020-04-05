@@ -15,9 +15,11 @@ type private ServiceApi() =
         watcher.Changed |> Observable.subscribe (fun _ -> printfn "ServiceApi.watcher.Changed")
 
     let userModules =
+        let dic = Collections.Generic.Dictionary()
         Directory.GetFiles DynamicModule.SourceDirectory
         |> Array.map (Path.GetFileNameWithoutExtension >> fun name -> name, DynamicModule name)
-        |> dict
+        |> Array.iter (fun (name, item) -> dic.Add(name, item))
+        dic
 
     let getModule name =
         let contains, found = userModules.TryGetValue name
@@ -37,6 +39,18 @@ type private ServiceApi() =
         userModules.Keys
         |> Seq.toArray
         |> Ok
+        |> valueToJson
+
+    member this.AddNewModule(name: string) =
+        let path = Path.Combine(DynamicModule.SourceDirectory, name + ".fs")
+        if File.Exists path || userModules.ContainsKey name then
+            Error "not implemented"
+        else
+            File.WriteAllText
+                (path,
+                 sprintf "module %s\n" name)
+            userModules.Add(name, DynamicModule name)
+            Ok()
         |> valueToJson
 
     member this.GetFunctionList modName =
@@ -87,6 +101,11 @@ type Server() =
                 JsonValue.Number(decimal 0)
                 |> Ok
                 |> valueToJson
+            | [| "modules"; "new" |] ->
+                use reader = new StreamReader(con.Request.InputStream)
+                let name = reader.ReadToEnd()
+                printfn "modules/new: name = %s" name
+                api.AddNewModule name
             | [| "modules"; modName; "breath" |] -> api.GetModuleBreathCount modName
             | [| "modules"; modName; "functions" |] -> api.GetFunctionList modName
             | [| "modules"; modName; "functions"; funcName |] -> api.GetFunction(modName, funcName)

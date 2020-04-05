@@ -88,14 +88,11 @@ function CodeEditor(props: { name: string }) {
     }
     else if (e.keyCode === 9) {
       e.preventDefault();
-      console.log(1);
       if (e.target instanceof HTMLTextAreaElement) {
-        console.log(2);
         const pos = e.target.selectionStart;
         if (pos !== null) {
-          console.log(3);
           const txt = e.target.value;
-          e.target.value = txt.substr(0, pos) + '\t' + txt.substr(pos, txt.length);
+          e.target.value = txt.substr(0, pos) + '  ' + txt.substr(pos, txt.length);
           e.target.setSelectionRange(pos + 1, pos + 1);
         }
       }

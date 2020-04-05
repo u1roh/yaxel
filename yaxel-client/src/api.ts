@@ -106,3 +106,7 @@ export async function fetchModuleFunctions(modName: string): Promise<Result<yaxe
     console.log(funcs);
     return { tag: 'ok', value: funcs };
 }
+
+export async function addNewModule(modName: string): Promise<Result<null>> {
+    return postJson('api/modules/new', modName);
+}

@@ -34,7 +34,30 @@ function Module(props: { name: string }) {
   );
 }
 
-function ModuleList(props: { modules: string[], onSelectedIndexChanged: (index: number) => void }) {
+function NewItem(props: { onNewItem: (name: string) => boolean }) {
+  const [isActive, setIsActive] = useState(false);
+  const [isError, setIsError] = useState(false);
+  const [name, setName] = useState("");
+  const clear = () => {
+    setIsActive(false);
+    setIsError(false);
+    setName("");
+  };
+  console.log("isActive = " + isActive);
+  return <div className='NewItem'>
+    {isActive ?
+      <div className='NewItem-active'>
+        <input className={isError ? 'NewItem-input-error' : 'NewItem-input'} onChange={e => setName(e.target.value)} value={name}></input>
+        <input className='NewItem-button' type='button' name='add' value='Add'
+          onClick={e => props.onNewItem(name) ? clear() : setIsError(true)}></input>
+        <input className='NewItem-button' type='button' name='cancel' value='Cancel' onClick={clear}></input>
+      </div> :
+      <div className='NewItem-nonactive' onClick={() => setIsActive(true)}>+</div>
+    }
+  </div >;
+}
+
+function ModuleList(props: { modules: string[], onSelectedIndexChanged: (index: number) => void, onNewModule: (name: string) => boolean }) {
   const [selectedIndex, setSelectedIndex] = useState(0);
   return (
     <div className="ModuleList">
@@ -45,6 +68,7 @@ function ModuleList(props: { modules: string[], onSelectedIndexChanged: (index: 
             onClick={_ => { setSelectedIndex(index); props.onSelectedIndexChanged(index); console.log("onClick: index = " + index); }}>{item}</li>
         )}
       </ul>
+      <NewItem onNewItem={props.onNewModule}></NewItem>
     </div>
   );
 }
@@ -109,11 +133,18 @@ function App() {
     }, 1000);
     return () => clearInterval(id);
   }, [breath, modules, selectedModuleIndex]);
+  const onNewModule = (name: string) => {
+    if (/^\w(\w|\d)*$/.test(name)) {
+      api.addNewModule(name).then(() => api.fetchModuleList()).then(setModules);
+      return true;
+    }
+    else { return false; }
+  };
   return (
     <div className="App">
       <h1>F# Cloud Run</h1>
       <div className="App-container">
-        <div className="App-modules"><ModuleList modules={modules} onSelectedIndexChanged={setSelectedModuleIndex} /></div>
+        <div className="App-modules"><ModuleList modules={modules} onSelectedIndexChanged={setSelectedModuleIndex} onNewModule={onNewModule} /></div>
         <div className="App-functions"><Module name={modules[selectedModuleIndex]} /></div>
         <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
       </div>

@@ -63,3 +63,29 @@
   color: gray;
   cursor: pointer;
 }
+
+.NewItem-nonactive {
+  border-style: solid;
+  border-width: 1px;
+  padding: 4px;
+  cursor: pointer;
+  font-family: "Courier New", Consolas, monospace;
+  font-size: 20px;
+  text-align: center;
+}
+
+.NewItem-input {
+  width: 90%;
+  margin: 1px;
+}
+
+.NewItem-input-error {
+  width: 90%;
+  margin: 1px;
+  background-color: lightpink;
+}
+
+.NewItem-button {
+  width: 45%;
+  margin: 1px;
+}

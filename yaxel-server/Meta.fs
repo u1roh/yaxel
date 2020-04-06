@@ -42,6 +42,8 @@ let rec ofSystemType (t: System.Type) =
     let contains, found = primitiveTypes.TryGetValue t
     if contains then
         found
+    elif t.IsGenericType && t.GetGenericTypeDefinition() = typeof<list<int>>.GetGenericTypeDefinition() then
+        ofSystemType t.GenericTypeArguments.[0] |> List
     elif FSharpType.IsRecord t then
         { RecordSystemType = t
           RecordName = t.Name

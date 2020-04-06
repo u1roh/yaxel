@@ -36,7 +36,6 @@
 
 .App-editor {
   width: 40%;
-  height: 100%;
   border-color: skyblue;
   border-width: 1px;
   border-style: solid;
@@ -45,7 +44,6 @@
 
 .CodeEditor-textarea {
   width: 90%;
-  height: 100%;
   min-height: 200px;
   background-color: #282830;
   color: lightgray;

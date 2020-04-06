@@ -77,9 +77,6 @@ function ModuleList(props: ListProps) {
     setSelectedIndex(index);
     props.onSelectedIndexChanged(index);
   };
-  const onDelete = (index: number) => {
-
-  };
   return (
     <div className="ModuleList">
       <h2>Modules</h2>

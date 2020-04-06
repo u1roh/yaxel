@@ -19,18 +19,19 @@ async function postJson<T>(input: RequestInfo, json: string): Promise<Result<T>>
             'Content-Type': 'application/json'
         }
     });
-    const text = await res.text();
-    const result = JSON.parse(text);
+    const result = await res.json();
     return result.name === "Ok" ? { tag: 'ok', value: result.value } : { tag: 'err', value: result.value }
 }
 
 async function get<T>(func: string): Promise<Result<T>> {
     try {
         const res = await fetch('api/' + func);
-        const text = await res.text();
-        //console.log("get(" + func + "): text = " + text);
-        const json = JSON.parse(text);
-        return json.name === "Ok" ? { tag: 'ok', value: json.value } : { tag: 'err', value: json.value }
+        if (res.ok) {
+            const json = await res.json();
+            return json.name === "Ok" ? { tag: 'ok', value: json.value } : { tag: 'err', value: json.value }
+        } else {
+            return { tag: 'err', value: { status: res.status } }
+        }
     }
     catch (e) {
         console.log(e);
@@ -48,14 +49,17 @@ async function getOr<T>(func: string, defValue: T): Promise<T> {
     }
 }
 
-async function fetchText(input: RequestInfo): Promise<string> {
-    const res = await fetch(input);
-    return res.text();
-}
-
-async function fetchBy<T>(input: RequestInfo, map: (text: string) => T): Promise<T> {
-    const text = await fetchText(input);
-    return map(text);
+async function fetchDelete(path: string): Promise<Result<null>> {
+    const res = await fetch(path, {
+        method: 'DELETE',
+        body: "",
+    });
+    if (res.ok) {
+        const result = await res.json();
+        return result.name === "Ok" ? { tag: 'ok', value: result.value } : { tag: 'err', value: result.value }
+    } else {
+        return { tag: 'err', value: { status: res.status } };
+    }
 }
 
 export function fetchModuleList(): Promise<string[]> {
@@ -109,4 +113,8 @@ export async function fetchModuleFunctions(modName: string): Promise<Result<yaxe
 
 export async function addNewModule(modName: string): Promise<Result<null>> {
     return postJson('api/modules/new', modName);
+}
+
+export async function deleteModule(modName: string): Promise<Result<null>> {
+    return fetchDelete('api/modules/' + modName)
 }

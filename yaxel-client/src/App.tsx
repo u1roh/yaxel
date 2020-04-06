@@ -57,18 +57,36 @@ function NewItem(props: { onNewItem: (name: string) => boolean }) {
   </div >;
 }
 
-function ModuleList(props: { modules: string[], onSelectedIndexChanged: (index: number) => void, onNewModule: (name: string) => boolean }) {
+function ListItem(props: { name: string, selected: boolean, onSelect: () => void, onDelete: () => void }) {
+  return <div className={props.selected ? 'ListItem-selected' : 'ListItem'}>
+    <span style={{ cursor: "pointer" }} onClick={props.onSelect}>{props.name}</span>
+    <span className='ListItem-delete' style={{ float: "right", paddingRight: "2px", cursor: "pointer" }} onClick={props.onDelete}>x</span>
+  </div >;
+}
+
+interface ListProps {
+  items: string[];
+  onSelectedIndexChanged: (index: number) => void;
+  onNewItem: (name: string) => boolean;
+  onDeleteItem: (index: number) => void;
+}
+
+function ModuleList(props: ListProps) {
   const [selectedIndex, setSelectedIndex] = useState(0);
+  const onSelect = (index: number) => {
+    setSelectedIndex(index);
+    props.onSelectedIndexChanged(index);
+  };
+  const onDelete = (index: number) => {
+
+  };
   return (
     <div className="ModuleList">
       <h2>Modules</h2>
-      <ul>
-        {props.modules.map((item, index) =>
-          <li className={index === selectedIndex ? "ItemSelected" : "ItemDeselected"}
-            onClick={_ => { setSelectedIndex(index); props.onSelectedIndexChanged(index); console.log("onClick: index = " + index); }}>{item}</li>
-        )}
-      </ul>
-      <NewItem onNewItem={props.onNewModule}></NewItem>
+      {props.items.map((item, index) =>
+        <ListItem name={item} selected={index === selectedIndex} onSelect={() => onSelect(index)} onDelete={() => props.onDeleteItem(index)}></ListItem>
+      )}
+      <NewItem onNewItem={props.onNewItem}></NewItem>
     </div>
   );
 }
@@ -137,11 +155,22 @@ function App() {
     }
     else { return false; }
   };
+  const onDeleteModule = async (index: number) => {
+    const ret = await api.deleteModule(modules[index]);
+    if (ret.tag === 'err') {
+      alert(JSON.stringify(ret.value));
+      return;
+    }
+    setModules(await api.fetchModuleList());
+  };
   return (
     <div className="App">
       <h1>F# Cloud Run</h1>
       <div className="App-container">
-        <div className="App-modules"><ModuleList modules={modules} onSelectedIndexChanged={setSelectedModuleIndex} onNewModule={onNewModule} /></div>
+        <div className="App-modules"><ModuleList items={modules}
+          onSelectedIndexChanged={setSelectedModuleIndex}
+          onNewItem={onNewModule}
+          onDeleteItem={onDeleteModule} /></div>
         <div className="App-functions"><Module name={modules[selectedModuleIndex]} /></div>
         <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
       </div>

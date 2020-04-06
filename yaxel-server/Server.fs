@@ -53,6 +53,16 @@ type private ServiceApi() =
             Ok()
         |> valueToJson
 
+    member this.DeleteModule(name: string) =
+        let path = Path.Combine(DynamicModule.SourceDirectory, name + ".fs")
+        if File.Exists path then
+            File.Delete path
+            userModules.Remove name |> ignore
+            Ok()
+        else
+            Error "the module doesn't exist"
+        |> valueToJson
+
     member this.GetFunctionList modName =
         getModule modName
         |> Result.bind (fun m -> m.FunctionList)
@@ -119,6 +129,11 @@ type Server() =
             | [| "modules"; modName; "usercode"; "update" |] ->
                 use reader = new StreamReader(con.Request.InputStream)
                 api.UpdateUserCode(modName, reader.ReadToEnd())
+            | [| "modules"; modName |] ->
+                if con.Request.HttpMethod = "DELETE" then
+                    api.DeleteModule modName
+                else
+                    Error "unknown method" |> valueToJson
             | _ -> sprintf "unknown API: pathes = %A" pathes |> FSharp.Data.JsonValue.String
             |> writer.Write
         else

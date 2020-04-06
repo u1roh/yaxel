@@ -89,3 +89,22 @@
   width: 45%;
   margin: 1px;
 }
+
+.ListItem {
+  padding: 4px;
+  margin: 2px;
+  background-color: lightslategray;
+}
+
+.ListItem-selected {
+  padding: 4px;
+  margin: 2px;
+  background-color: lightslategray;
+  border-style: solid;
+  border-color: sandybrown;
+  border-width: 2px;
+}
+
+.ListItem-delete:hover {
+  color: sandybrown;
+}

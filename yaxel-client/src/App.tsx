@@ -127,10 +127,45 @@ function CodeEditor(props: { name: string }) {
   </div>;
 }
 
+function FSharpCheatSheet(props: { visible: boolean, onClose: () => void }) {
+  //return <div className="FSharpCheatSheet" style={{ visibility: props.visible ? "visible" : "hidden" }}>
+  return <div className="FSharpCheatSheet">
+    <div style={{ textAlign: "right", color: "lightpink", cursor: "pointer" }} onClick={() => props.onClose()}>Close</div>
+    <h2>F# Cheat sheet</h2>
+    <h3>簡単な関数の例</h3>
+    <pre>{`let hello (name: string) =
+  sprintf "hello, %s" name
+
+let add (a: int) (b: int) =
+  a + b
+
+let max (a: int) (b: int) =
+  if a < b then
+    b
+  else
+    a
+`}</pre>
+    <h3>ポイント</h3>
+    <ul>
+      <li>F# はインデントでブロックを認識します。きちんとインデントを揃えて書きましょう。</li>
+      <li>関数の戻り値は「最後に評価された式の値」です。`return` を書く必要はありません。</li>
+    </ul>
+    <h3>型</h3>
+    <h4>組み込み型</h4>
+    <ul>
+      <li>bool</li>
+      <li>int</li>
+      <li>float</li>
+      <li>string</li>
+    </ul>
+  </div>;
+}
+
 function App() {
   const [modules, setModules] = useState([] as string[]);
   const [breath, setBreath] = useState(-1);
   const [selectedModuleIndex, setSelectedModuleIndex] = useState(0);
+  const [cheatsheetVisible, setCheatsheetVisible] = useState(false);
   useEffect(() => {
     console.log("App: modules = " + JSON.stringify(modules));
     api.fetchModuleList().then(setModules);
@@ -163,13 +198,17 @@ function App() {
   return (
     <div className="App">
       <h1>F# Cloud Run</h1>
-      <div className="App-container">
-        <div className="App-modules"><ModuleList items={modules}
-          onSelectedIndexChanged={setSelectedModuleIndex}
-          onNewItem={onNewModule}
-          onDeleteItem={onDeleteModule} /></div>
-        <div className="App-functions"><Module name={modules[selectedModuleIndex]} /></div>
-        <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
+      <p style={{ textAlign: "right", cursor: "pointer" }} onClick={() => setCheatsheetVisible(true)}>Show F# cheat sheet</p>
+      <div className="App-body">
+        <div className="App-container">
+          <div className="App-modules"><ModuleList items={modules}
+            onSelectedIndexChanged={setSelectedModuleIndex}
+            onNewItem={onNewModule}
+            onDeleteItem={onDeleteModule} /></div>
+          <div className="App-functions"><Module name={modules[selectedModuleIndex]} /></div>
+          <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
+        </div>
+        <FSharpCheatSheet visible={cheatsheetVisible} onClose={() => setCheatsheetVisible(false)} />
       </div>
     </div>
   );

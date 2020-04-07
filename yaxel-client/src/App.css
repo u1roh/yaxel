@@ -42,6 +42,26 @@
   padding: 1em;
 }
 
+.App-body {
+  position: relative;
+  height: 100%;
+}
+
+.FSharpCheatSheet {
+  z-index: 2;
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  width: 50%;
+  height: 100%;
+  background-color: #282830;
+  padding: 1em;
+  overflow-y: scroll;
+  border-style: solid;
+  border-color: lightpink;
+  border-width: 1px;
+}
+
 .CodeEditor-textarea {
   width: 90%;
   min-height: 200px;

@@ -47,7 +47,13 @@ function Function(props: { module: string, func: yaxel.Fun }) {
                     onSubmit={updateArgs}></FunArgsInput>
             }
             <h3>return</h3>
-            <p>{JSON.stringify(result)}</p>
+            {result && result.tag === 'ok' ? <p>{JSON.stringify(result.value)}</p> :
+                <div>
+                    <h4 style={{ color: "lightpink" }}>ERROR</h4>
+                    <p>{result && result.value ? JSON.stringify(result.value) : "(none)"}</p>
+                </div>
+
+            }
         </div>
     );
 }

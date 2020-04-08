@@ -128,8 +128,7 @@ function CodeEditor(props: { name: string }) {
 }
 
 function FSharpCheatSheet(props: { visible: boolean, onClose: () => void }) {
-  //return <div className="FSharpCheatSheet" style={{ visibility: props.visible ? "visible" : "hidden" }}>
-  return <div className="FSharpCheatSheet">
+  return <div className="FSharpCheatSheet" style={{ visibility: props.visible ? "visible" : "hidden" }}>
     <div style={{ textAlign: "right", color: "lightpink", cursor: "pointer" }} onClick={() => props.onClose()}>Close</div>
     <h2>F# Cheat sheet</h2>
     <h3>簡単な関数の例</h3>

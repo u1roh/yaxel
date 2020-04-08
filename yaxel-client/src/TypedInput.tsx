@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import * as yaxel from './yaxel'
 import './TypedInput.css';
 
@@ -40,6 +40,23 @@ function UnionInput(props: UnionInputProps) {
     </div>);
 }
 
+function InputNumber(props: { value: number, type: 'int' | 'float', onChange: (input: number) => void }) {
+    const [text, setText] = useState(props.value.toString());
+    const onInput = (input: string) => {
+        const value = props.type === 'int' ? Number.parseInt(input) : Number.parseFloat(input);
+        if (Number.isNaN(value)) {
+            console.log("invalid input: " + input);
+        } else {
+            setText(value.toString());
+            props.onChange(value);
+        }
+    };
+    return <input type='number' value={text}
+        onChange={e => setText(e.target.value)}
+        onKeyDown={e => { if (e.key === 'Enter') onInput(text); }}
+        onBlur={() => onInput(text)}></input>;
+}
+
 interface TypedInputProps {
     name: string;
     type: yaxel.Type;
@@ -59,11 +76,11 @@ function TypedInput(props: TypedInputProps) {
                 return <span></span>;
             case "int":
                 return <span>{caption}
-                    <input value={props.value} onChange={(e) => onChange(Number.parseInt(e.target.value))}></input>
+                    <InputNumber type='int' value={props.value} onChange={onChange} />
                 </span>;
             case "float":
                 return <span>{caption}
-                    <input value={props.value} onChange={(e) => onChange(Number.parseFloat(e.target.value))}></input>
+                    <InputNumber type='float' value={props.value} onChange={onChange} />
                 </span>;
             case "string":
                 return <span>{caption}

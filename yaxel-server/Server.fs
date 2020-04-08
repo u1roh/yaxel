@@ -37,6 +37,7 @@ type private ServiceApi() =
 
     member this.GetModuleList() =
         userModules.Keys
+        |> Seq.sort
         |> Seq.toArray
         |> Ok
         |> valueToJson

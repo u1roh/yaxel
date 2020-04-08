@@ -117,6 +117,7 @@ type DynamicModule(name) =
             breathCount <- breathCount + 1
             result |> Result.map ignore
         with e ->
+            printfn "error @ UpdateUserCode: %O" e
             e.ToString()
             |> JsonValue.String
             |> Error

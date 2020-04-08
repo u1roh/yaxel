@@ -44,7 +44,7 @@ type private ServiceApi() =
     member this.AddNewModule(name: string) =
         let path = Path.Combine(DynamicModule.SourceDirectory, name + ".fs")
         if File.Exists path || userModules.ContainsKey name then
-            Error "not implemented"
+            Error "the name already exists"
         else
             File.WriteAllText
                 (path,
@@ -103,38 +103,43 @@ type Server() =
 
         if path.StartsWith "api/" then
             let pathes = path.Split([| '/' |], StringSplitOptions.RemoveEmptyEntries)
-            if pathes.[1] <> "breath" then printfn "OnRequest: path = %s" path
+            if pathes.[pathes.Length - 1] <> "breath" then printfn "OnRequest: path = %s" path
             use writer = new StreamWriter(out)
-            match pathes.[1..] with
-            | [| "modules" |] -> api.GetModuleList()
-            | [| "modules"; "breath" |] ->
-                JsonValue.Number(decimal 0)
-                |> Ok
+            try
+                match pathes.[1..] with
+                | [| "modules" |] -> api.GetModuleList()
+                | [| "modules"; "breath" |] ->
+                    JsonValue.Number(decimal 0)
+                    |> Ok
+                    |> valueToJson
+                | [| "modules"; "new" |] ->
+                    use reader = new StreamReader(con.Request.InputStream)
+                    let name = reader.ReadToEnd()
+                    printfn "modules/new: name = %s" name
+                    api.AddNewModule name
+                | [| "modules"; modName; "breath" |] -> api.GetModuleBreathCount modName
+                | [| "modules"; modName; "functions" |] -> api.GetFunctionList modName
+                | [| "modules"; modName; "functions"; funcName |] -> api.GetFunction(modName, funcName)
+                | [| "modules"; modName; "functions"; funcName; "invoke" |] ->
+                    use reader = new StreamReader(con.Request.InputStream)
+                    let args = reader.ReadToEnd()
+                    printfn "invoke: func = %s, args = %s" funcName args
+                    let json = JsonValue.Parse args
+                    api.InvokeFunction(modName, funcName, json)
+                | [| "modules"; modName; "usercode" |] -> api.GetUserCode modName
+                | [| "modules"; modName; "usercode"; "update" |] ->
+                    use reader = new StreamReader(con.Request.InputStream)
+                    api.UpdateUserCode(modName, reader.ReadToEnd())
+                | [| "modules"; modName |] ->
+                    if con.Request.HttpMethod = "DELETE" then
+                        api.DeleteModule modName
+                    else
+                        Error "unknown method" |> valueToJson
+                | _ -> sprintf "unknown API: pathes = %A" pathes |> FSharp.Data.JsonValue.String
+            with e ->
+                e.ToString()
+                |> Error
                 |> valueToJson
-            | [| "modules"; "new" |] ->
-                use reader = new StreamReader(con.Request.InputStream)
-                let name = reader.ReadToEnd()
-                printfn "modules/new: name = %s" name
-                api.AddNewModule name
-            | [| "modules"; modName; "breath" |] -> api.GetModuleBreathCount modName
-            | [| "modules"; modName; "functions" |] -> api.GetFunctionList modName
-            | [| "modules"; modName; "functions"; funcName |] -> api.GetFunction(modName, funcName)
-            | [| "modules"; modName; "functions"; funcName; "invoke" |] ->
-                use reader = new StreamReader(con.Request.InputStream)
-                let args = reader.ReadToEnd()
-                printfn "invoke: func = %s, args = %s" funcName args
-                let json = JsonValue.Parse args
-                api.InvokeFunction(modName, funcName, json)
-            | [| "modules"; modName; "usercode" |] -> api.GetUserCode modName
-            | [| "modules"; modName; "usercode"; "update" |] ->
-                use reader = new StreamReader(con.Request.InputStream)
-                api.UpdateUserCode(modName, reader.ReadToEnd())
-            | [| "modules"; modName |] ->
-                if con.Request.HttpMethod = "DELETE" then
-                    api.DeleteModule modName
-                else
-                    Error "unknown method" |> valueToJson
-            | _ -> sprintf "unknown API: pathes = %A" pathes |> FSharp.Data.JsonValue.String
             |> writer.Write
         else
             let path =

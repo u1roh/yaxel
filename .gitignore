@@ -1,1 +1,3 @@
 /.ionide
+/yaxel-user/*
+*.sh

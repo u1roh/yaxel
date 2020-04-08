@@ -118,3 +118,10 @@ export async function addNewModule(modName: string): Promise<Result<null>> {
 export async function deleteModule(modName: string): Promise<Result<null>> {
     return fetchDelete('api/modules/' + modName)
 }
+
+export function restoreSampleModules() {
+    fetch('api/modules/restore-sample', {
+        method: 'POST',
+        body: '',
+    });
+}

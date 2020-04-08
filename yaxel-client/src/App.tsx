@@ -79,6 +79,7 @@ function ModuleList(props: ListProps) {
   };
   return (
     <div className="ModuleList">
+      <p style={{ cursor: 'pointer' }} onClick={() => api.restoreSampleModules()}>Restore sample modules</p>
       <h2>Modules</h2>
       {props.items.map((item, index) =>
         <ListItem name={item} selected={index === selectedIndex} onSelect={() => onSelect(index)} onDelete={() => props.onDeleteItem(index)}></ListItem>

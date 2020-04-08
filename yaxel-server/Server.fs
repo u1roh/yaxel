@@ -7,6 +7,16 @@ open FSharp.Data
 
 type private ServiceApi() =
 
+    static let restoreSampleModules() =
+        printfn "restoreSampleModules()"
+        IO.Directory.GetFiles "../yaxel-sample"
+        |> Array.iter (fun path ->
+            printfn " - restore %s" path
+            let dst = IO.Path.Combine(DynamicModule.SourceDirectory, IO.Path.GetFileName path)
+            IO.File.Copy(path, dst, true))
+
+    do restoreSampleModules()
+
     let watcher =
         let watcher =
             new FileSystemWatcher(Path = DynamicModule.SourceDirectory, Filter = "*.fs",
@@ -29,6 +39,13 @@ type private ServiceApi() =
             sprintf "module '%s' not found" name
             |> JsonValue.String
             |> Error
+
+    member this.RestoreSampleModules() =
+        try
+            restoreSampleModules()
+            Ok()
+        with e -> e.ToString() |> Error
+        |> valueToJson
 
     member this.GetModuleBreathCount modName =
         getModule modName
@@ -108,6 +125,7 @@ type Server() =
             use writer = new StreamWriter(out)
             try
                 match pathes.[1..] with
+                | [| "modules"; "restore-sample" |] when con.Request.HttpMethod = "POST" -> api.RestoreSampleModules()
                 | [| "modules" |] -> api.GetModuleList()
                 | [| "modules"; "breath" |] ->
                     JsonValue.Number(decimal 0)

@@ -41,7 +41,7 @@ function UnionInput(props: UnionInputProps) {
 }
 
 function InputNumber(props: { value: number, type: 'int' | 'float', onChange: (input: number) => void }) {
-    const [text, setText] = useState(props.value.toString());
+    const [text, setText] = useState(props.value ? props.value.toString() : "");
     const onInput = (input: string) => {
         const value = props.type === 'int' ? Number.parseInt(input) : Number.parseFloat(input);
         if (Number.isNaN(value)) {

@@ -108,7 +108,7 @@ function CodeEditor(props: { name: string }) {
         if (pos !== null) {
           const txt = e.target.value;
           e.target.value = txt.substr(0, pos) + '  ' + txt.substr(pos, txt.length);
-          e.target.setSelectionRange(pos + 1, pos + 1);
+          e.target.setSelectionRange(pos + 2, pos + 2);
         }
       }
     }
@@ -146,10 +146,12 @@ let max (a: int) (b: int) =
 `}</pre>
     <h3>ポイント</h3>
     <ul>
+      <li>本サービスは F# の全ての型に対応できていないので、関数の引数や戻り値に使用できる型に制限があります。</li>
       <li>F# はインデントでブロックを認識します。きちんとインデントを揃えて書きましょう。</li>
       <li>関数の戻り値は「最後に評価された式の値」です。`return` を書く必要はありません。</li>
     </ul>
-    <h3>型</h3>
+    <h3>引数/戻り値に使える型</h3>
+    <p>F# の全ての型に対応できていないので、関数の引数や戻り値に使用できる型に制限があります。特に、配列やリストは（まだ）扱えないのでご注意ください。</p>
     <h4>組み込み型</h4>
     <ul>
       <li>bool</li>
@@ -157,6 +159,18 @@ let max (a: int) (b: int) =
       <li>float</li>
       <li>string</li>
     </ul>
+    <h4>Record 型</h4>
+    <pre>{`type SampleRecordType = {
+  Field1: int
+  Field2: float
+  Field3: string
+}`}</pre>
+    <h4>Union 型</h4>
+    <pre>{`type SampleUnionType =
+  | Variant1
+  | Variant2 of int
+  | Variant3 of SampleRecordType
+`}</pre>
   </div>;
 }
 

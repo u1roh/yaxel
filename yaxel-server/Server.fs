@@ -10,12 +10,13 @@ type private ServiceApi() =
     static let restoreSampleModules() =
         printfn "restoreSampleModules()"
         IO.Directory.GetFiles "../yaxel-sample"
-        |> Array.iter (fun path ->
+        |> Array.map (fun path ->
             printfn " - restore %s" path
             let dst = IO.Path.Combine(DynamicModule.SourceDirectory, IO.Path.GetFileName path)
-            IO.File.Copy(path, dst, true))
+            IO.File.Copy(path, dst, true)
+            IO.Path.GetFileNameWithoutExtension path)
 
-    do restoreSampleModules()
+    do restoreSampleModules() |> ignore
 
     let watcher =
         let watcher =
@@ -42,7 +43,8 @@ type private ServiceApi() =
 
     member this.RestoreSampleModules() =
         try
-            restoreSampleModules()
+            for name in restoreSampleModules() do
+                if not (userModules.ContainsKey name) then userModules.Add(name, DynamicModule name)
             Ok()
         with e -> e.ToString() |> Error
         |> valueToJson

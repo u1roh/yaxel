@@ -119,8 +119,8 @@ export async function deleteModule(modName: string): Promise<Result<null>> {
     return fetchDelete('api/modules/' + modName)
 }
 
-export function restoreSampleModules() {
-    fetch('api/modules/restore-sample', {
+export function restoreSampleModules(): Promise<Response> {
+    return fetch('api/modules/restore-sample', {
         method: 'POST',
         body: '',
     });

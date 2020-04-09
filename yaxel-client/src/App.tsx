@@ -69,6 +69,7 @@ interface ListProps {
   onSelectedIndexChanged: (index: number) => void;
   onNewItem: (name: string) => boolean;
   onDeleteItem: (index: number) => void;
+  onReload: () => void;
 }
 
 function ModuleList(props: ListProps) {
@@ -84,7 +85,7 @@ function ModuleList(props: ListProps) {
         <ListItem name={item} selected={index === selectedIndex} onSelect={() => onSelect(index)} onDelete={() => props.onDeleteItem(index)}></ListItem>
       )}
       <NewItem onNewItem={props.onNewItem}></NewItem>
-      <p style={{ cursor: 'pointer' }} onClick={() => api.restoreSampleModules()}>Restore sample modules</p>
+      <p style={{ cursor: 'pointer' }} onClick={() => api.restoreSampleModules().then(() => props.onReload())}>Restore sample modules</p>
     </div>
   );
 }
@@ -194,9 +195,12 @@ function App() {
     }, 1000);
     return () => clearInterval(id);
   }, [breath, modules, selectedModuleIndex]);
+  const onReload = () => {
+    api.fetchModuleList().then(setModules);
+  }
   const onNewModule = (name: string) => {
     if (/^\w(\w|\d)*$/.test(name)) {
-      api.addNewModule(name).then(() => api.fetchModuleList()).then(setModules);
+      api.addNewModule(name).then(() => onReload());
       return true;
     }
     else { return false; }
@@ -207,7 +211,7 @@ function App() {
       alert(JSON.stringify(ret.value));
       return;
     }
-    setModules(await api.fetchModuleList());
+    onReload();
   };
   return (
     <div className="App">
@@ -218,7 +222,8 @@ function App() {
           <div className="App-modules"><ModuleList items={modules}
             onSelectedIndexChanged={setSelectedModuleIndex}
             onNewItem={onNewModule}
-            onDeleteItem={onDeleteModule} /></div>
+            onDeleteItem={onDeleteModule}
+            onReload={onReload} /></div>
           <div className="App-functions"><Module name={modules[selectedModuleIndex]} /></div>
           <div className="App-editor"><CodeEditor name={modules[selectedModuleIndex]} /></div>
         </div>
